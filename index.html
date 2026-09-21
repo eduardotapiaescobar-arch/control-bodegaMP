@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="./manifest.json">
+  <title>Bodega MP</title>
+
+  <!-- Librerías equivalentes para Code128 y Escáner de Cámara -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #000000;
+      --secondary-text: #8e8e93;
+      --border: #d1d1d6;
+      --blue: #007aff;
+      --green: #34c759;
+      --orange: #ff9500;
+      --purple: #af52de;
+      --red: #ff3b30;
+      --gray: #8e8e93;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 70px; user-select: none; }
+
+    header { background: #1c1c1e; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    header h1 { font-size: 1.1rem; }
+
+    .view-section { display: none; padding: 12px; }
+    .view-section.active { display: block; }
+
+    .card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 14px; margin-bottom: 12px; }
+    .btn { padding: 8px 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.85rem; }
+    .btn-blue { background: var(--blue); color: white; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-orange { background: var(--orange); color: white; }
+    .btn-purple { background: var(--purple); color: white; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-bordered { background: #e5e5ea; color: black; }
+
+    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: white; }
+
+    /* Barra inferior */
+    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #f2f2f7; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+    .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.65rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .tab-item.active { color: var(--blue); font-weight: bold; }
+    .tab-item svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* Mapa de Bodega */
+    .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; }
+    .fila-col { min-width: 125px; background: rgba(0,0,0,0.05); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
+    .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: #e5e5ea; border-radius: 8px; }
+    .pos-box { background: white; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
+    .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; }
+    .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
+    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+
+    /* Modales */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
+    .modal-content { background: white; width: 100%; max-width: 440px; max-height: 85vh; border-radius: 14px; overflow-y: auto; padding: 16px; }
+    .etiqueta-brother { width: 320px; border: 1.5px solid black; background: white; padding: 14px; border-radius: 10px; margin: 10px auto; text-align: center; color: black; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="header-title">Bodega MP</h1>
+    <span id="stock-kilos-badge" style="font-size: 0.8rem; background: #2c2c2e; padding: 4px 8px; border-radius: 6px;">0.0 kg</span>
+  </header>
+
+  <!-- 1. RECEPCIÓN CAMIÓN -->
+  <section id="view-camion" class="view-section">
+    <div class="card">
+      <h3 style="font-size: 1rem; margin-bottom: 8px;">Recepción Camión</h3>
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Plantilla de Catálogo</label>
+      <select id="rec-material" onchange="actualizarPlantilla()"></select>
+
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Código de Material (Obligatorio)</label>
+      <input type="text" id="rec-codigo">
+
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Descripción / Nombre (Obligatorio)</label>
+      <input type="text" id="rec-nombre">
+
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote del Proveedor (Obligatorio)</label>
+      <input type="text" id="rec-lote" placeholder="Lote..." oninput="validarFormularioCamion()">
+
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila Asignada para este Camión</label>
+      <select id="rec-fila"></select>
+
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso por Pallet (kg)</label>
+          <input type="number" id="rec-peso" value="1200" oninput="validarFormularioCamion()">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Pallets</label>
+          <input type="number" id="rec-cantidad" value="40" oninput="validarFormularioCamion()">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(20)">20 Pallets</button>
+        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(40)">40 Pallets (Camión)</button>
+      </div>
+
+      <p id="total-carga-camion" style="font-size: 0.85rem; font-weight: bold; color: var(--blue); margin-bottom: 8px;">Total carga: 48000.0 kg</p>
+
+      <button id="btn-crear-lote" class="btn btn-blue" style="width: 100%;" onclick="crearLote()" disabled>
+        Completa los Datos para Crear
+      </button>
+    </div>
+  </section>
+
+  <!-- 2. BODEGA MP -->
+  <section id="view-bodega" class="view-section active">
+    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+      <button id="btn-modo-entrada" class="btn btn-green" style="flex: 1;" onclick="setModoOperacion('ENTRADA BODEGA')">📥 Entrada a Bodega</button>
+      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho FIFO</button>
+    </div>
+
+    <div id="banner-modo" class="card" style="background: rgba(52, 199, 89, 0.15); color: var(--green); border: none;">
+      <strong id="banner-modo-titulo">MODO ENTRADA ACTIVO</strong>
+      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
+    </div>
+
+    <!-- Listado FIFO separado por componente -->
+    <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
+
+    <button id="btn-scanner-principal" class="btn btn-blue" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="abrirCamara(null)">
+      Escanear Entrada a Bodega
+    </button>
+
+    <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+      <input type="text" id="serial-manual" placeholder="O validar por serial manual (Ej: BTO-00101)..." style="margin: 0;">
+      <button class="btn btn-bordered" onclick="validarManual()">Validar</button>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+      <div class="card" style="flex: 1; text-align: center; margin: 0;">
+        <small style="color: var(--secondary-text);">Bultos en Bodega</small>
+        <h3 id="bultos-stock-count">0</h3>
+      </div>
+      <div class="card" style="flex: 1; text-align: center; margin: 0;">
+        <small style="color: var(--secondary-text);">Kilos en Bodega</small>
+        <h3 id="bultos-stock-kilos" style="color: var(--blue);">0.0 kg</h3>
+      </div>
+    </div>
+
+    <div class="card">
+      <small style="font-weight: bold; color: var(--secondary-text);">Últimos Registros</small>
+      <div id="lista-ultimos-registros" style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+  </section>
+
+  <!-- 3. MAPA DE BODEGA -->
+  <section id="view-mapa" class="view-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div style="display: flex; gap: 8px; font-size: 0.7rem;">
+        <span><b style="color: var(--orange);">⭐ Prioritario</b></span>
+        <span><b style="color: var(--purple);">● Retornados</b></span>
+        <span>2 Pallets x Pos</span>
+      </div>
+      <button class="btn btn-blue" style="font-size: 0.75rem; padding: 6px 10px;" onclick="compactarPosiciones()">Compactar Pasillos</button>
+    </div>
+
+    <div class="map-container" id="mapa-filas-render"></div>
+  </section>
+
+  <!-- 4. PRODUCCIÓN / TRÁNSITO -->
+  <section id="view-produccion" class="view-section">
+    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+      <div class="card" style="flex: 1; background: rgba(175, 82, 222, 0.1); margin: 0; border: none;">
+        <small style="color: var(--secondary-text);">En Tránsito / Planta</small>
+        <h4 id="planta-pallets-count" style="color: var(--purple);">0 pallets</h4>
+      </div>
+      <div class="card" style="flex: 1; background: rgba(175, 82, 222, 0.1); margin: 0; border: none;">
+        <small style="color: var(--secondary-text);">Kilos en Tránsito</small>
+        <h4 id="planta-kilos-count" style="color: var(--purple);">0.0 kg</h4>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <button class="btn btn-purple" style="width: 100%; margin-right: 6px;" onclick="abrirCamaraPlanta()">Escanear Pallet en Planta</button>
+      <button class="btn btn-red" style="font-size: 0.75rem; padding: 8px;" onclick="consumirRestantes()">Consumir Restantes</button>
+    </div>
+
+    <div id="lista-pallets-planta"></div>
+  </section>
+
+  <!-- 5. INVENTARIO GENERAL -->
+  <section id="view-inventario" class="view-section">
+    <select id="inv-filtro-estado" onchange="renderizarInventario()">
+      <option value="Todos">Todos</option>
+      <option value="En Stock">Bodega</option>
+      <option value="En Tránsito">Tránsito</option>
+      <option value="Creado">Creados</option>
+      <option value="Consumido">Consumidos</option>
+    </select>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <select id="inv-agrupar" style="width: 180px; margin: 0;" onchange="renderizarInventario()">
+        <option value="Por Material">Por Material</option>
+        <option value="Por Fila">Por Fila</option>
+        <option value="Por Lote">Por Lote</option>
+        <option value="Por Estado">Por Estado</option>
+      </select>
+      <button class="btn btn-red" style="font-size: 0.75rem;" onclick="borrarCreadosNoEscaneados()">Limpiar Creados</button>
+    </div>
+
+    <div id="lista-inventario-agrupado"></div>
+  </section>
+
+  <!-- 6. AUDITORÍA DE FLUJOS -->
+  <section id="view-auditoria" class="view-section">
+    <div id="lista-auditoria-agrupada"></div>
+  </section>
+
+  <!-- 7. CONFIGURACIÓN Y RESPALDO -->
+  <section id="view-respaldo" class="view-section">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="font-size: 0.9rem;">Gestión de Filas / Pasillos</h4>
+        <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="toggleModoEditarFilas()">Ordenar</button>
+      </div>
+      <div style="display: flex; gap: 4px; margin-top: 6px;">
+        <input type="text" id="nueva-fila-nombre" placeholder="Nueva fila (Ej: Fila 9)..." style="margin: 0;">
+        <button class="btn btn-blue" onclick="agregarFila()">Añadir</button>
+      </div>
+      <div id="lista-filas-gestion" style="margin-top: 8px;"></div>
+    </div>
+
+    <div class="card">
+      <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Control Externo y Archivo Excel</h4>
+      <button class="btn btn-green" style="width: 100%; margin-bottom: 8px;" onclick="exportarCSV()">Compartir Kardex Único (.CSV)</button>
+      <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="exportarJSON()">Exportar Copia Completa (.JSON)</button>
+      <input type="file" id="file-import-json" style="display: none;" onchange="importarJSON(event)">
+      <button class="btn btn-orange" style="width: 100%;" onclick="document.getElementById('file-import-json').click()">Restaurar Respaldo Externo</button>
+    </div>
+
+    <div class="card">
+      <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Catálogo de Materiales</h4>
+      <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="abrirModalMaterial(null)">Nuevo Artículo al Catálogo</button>
+      <div id="lista-catalogo-gestion"></div>
+    </div>
+  </section>
+
+  <!-- MODAL ETIQUETAS BROTHER 62MM -->
+  <div id="modal-etiquetas" class="modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Etiquetas Generadas</h3>
+        <button class="btn btn-bordered" onclick="cerrarModal('modal-etiquetas')">Listo</button>
+      </div>
+      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="window.print()">Imprimir Etiquetas (62mm)</button>
+      <div id="contenedor-etiquetas-brother"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE PALLET MAPA -->
+  <div id="modal-pallet-mapa" class="modal">
+    <div class="modal-content">
+      <div id="render-etiqueta-detalle"></div>
+      <div id="render-datos-detalle" style="margin: 10px 0; font-size: 0.85rem;"></div>
+      <button class="btn btn-bordered" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL AJUSTE DE KILOS -->
+  <div id="modal-ajuste-kilos" class="modal">
+    <div class="modal-content">
+      <h3>Modificar Kilos</h3>
+      <p id="ajuste-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <label style="font-size: 0.8rem;">Saldo Real (kg):</label>
+      <input type="number" id="ajuste-nuevos-kilos">
+      <label style="font-size: 0.8rem;">Observación:</label>
+      <input type="text" id="ajuste-motivo" value="Consumo en producción">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-ajuste-kilos')">Cancelar</button>
+        <button class="btn btn-purple" style="flex: 1;" onclick="confirmarAjusteKilos()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITOR MATERIAL -->
+  <div id="modal-editor-material" class="modal">
+    <div class="modal-content">
+      <h3 id="editor-mat-titulo">Nuevo Material</h3>
+      <input type="hidden" id="editor-mat-id">
+      <label style="font-size: 0.8rem;">Código:</label>
+      <input type="text" id="editor-mat-codigo">
+      <label style="font-size: 0.8rem;">Nombre:</label>
+      <input type="text" id="editor-mat-nombre">
+      <label style="font-size: 0.8rem;">Peso estándar (kg):</label>
+      <input type="number" id="editor-mat-peso">
+      <label style="font-size: 0.8rem;">Tipo de Empaque:</label>
+      <select id="editor-mat-empaque">
+        <option value="Pallet">Pallet</option>
+        <option value="Bolsa">Bolsa</option>
+        <option value="Caja">Caja</option>
+        <option value="Tambor">Tambor</option>
+        <option value="Contenedor">Contenedor</option>
+      </select>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-editor-material')">Cancelar</button>
+        <button class="btn btn-blue" style="flex: 1;" onclick="guardarMaterialCatalogo()">Guardar</button>
+      </div>
+      <button id="btn-eliminar-material" class="btn btn-red" style="width: 100%; margin-top: 8px; display: none;" onclick="eliminarMaterialCatalogo()">Eliminar</button>
+    </div>
+  </div>
+
+  <!-- MODAL SCANNER AVFOUNDATION / HTML5 -->
+  <div id="modal-scanner" class="modal">
+    <div class="modal-content" style="max-width: 340px; text-align: center;">
+      <div id="reader"></div>
+      <p id="scanner-objetivo-msg" style="font-size: 0.8rem; margin-top: 8px; font-weight: bold; color: var(--orange);"></p>
+      <button class="btn btn-red" style="width: 100%; margin-top: 10px;" onclick="cerrarScanner()">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- BARRA DE NAVEGACIÓN -->
+  <nav class="tabbar">
+    <div class="tab-item" onclick="cambiarTab('view-camion', this)">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      Recepción
+    </div>
+    <div class="tab-item active" onclick="cambiarTab('view-bodega', this)">
+      <svg viewBox="0 0 24 24"><path d="M4 10h16v10H4zM2 4h20v4H2z"/></svg>
+      Bodega
+    </div>
+    <div class="tab-item" onclick="cambiarTab('view-mapa', this)">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/></svg>
+      Mapa
+    </div>
+    <div class="tab-item" onclick="cambiarTab('view-produccion', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      Planta (<span id="tab-count-planta">0</span>)
+    </div>
+    <div class="tab-item" onclick="cambiarTab('view-inventario', this)">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
+      Inventario
+    </div>
+    <div class="tab-item" onclick="cambiarTab('view-auditoria', this)">
+      <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      Auditoría
+    </div>
+    <div class="tab-item" onclick="cambiarTab('view-respaldo', this)">
+      <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+      Respaldo
+    </div>
+  </nav>
+
+  <script>
+    // --- ESTADO GLOBAL (IDENTICO A SWIFT VIEWMODEL) ---
+    const STORAGE_KEY = "FLUJOS_SISTEMA_BODEGA_DATA";
+    const nombreFilaRetornados = "Retornados";
+
+    let state = {
+      contador: 100,
+      modoOperacion: "ENTRADA BODEGA",
+      filasBodega: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
+      catalogo: [
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet" },
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet" },
+        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet" },
+        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet" },
+        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa" }
+      ],
+      bultos: [],
+      movimientos: []
+    };
+
+    let palletObjetivoFIFO = null;
+    let modoEdicionFilas = false;
+    let scannerActivo = null;
+
+    // --- PERSISTENCIA ATÓMICA EN DISCO (LOCALSTORAGE) ---
+    function guardarTodo() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      actualizarEstadisticas();
+    }
+
+    function cargarTodo() {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        try { state = JSON.parse(guardado); } catch (e) { console.error(e); }
+      } else {
+        // Inicialización idéntica de Swift si está vacío
+        const hace3Dias = new Date(Date.now() - 86400000 * 3).toISOString();
+        const hace2Dias = new Date(Date.now() - 86400000 * 2).toISOString();
+        const hace1Dia = new Date(Date.now() - 86400000 * 1).toISOString();
+
+        state.bultos = [
+          { id: crypto.randomUUID(), serial: "BTO-00101", codigoMaterial: "RMGE00007", nombreMaterial: "Material - PA6 - Genérico - AZOTY", kilos: 1200, kilosIniciales: 1200, tipoEmpaque: "Pallet", lote: "L-9041", filaBodega: "Fila 1", posicionFila: 1, nivelApilado: 1, fechaCreacion: hace3Dias, fechaIngresoBodega: hace2Dias, estado: "En Stock", ajustadoEnTurno: false },
+          { id: crypto.randomUUID(), serial: "BTO-00102", codigoMaterial: "RMGE00007", nombreMaterial: "Material - PA6 - Genérico - JIANGSU", kilos: 850, kilosIniciales: 850, tipoEmpaque: "Pallet", lote: "L-9042", filaBodega: "Fila 2", posicionFila: 1, nivelApilado: 1, fechaCreacion: hace2Dias, fechaIngresoBodega: hace1Dia, estado: "En Stock", ajustadoEnTurno: false }
+        ];
+        guardarTodo();
+      }
+      poblarSelectores();
+      renderizarBodega();
+      actualizarEstadisticas();
+    }
+
+    function cambiarTab(tabId, el) {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      el.classList.add('active');
+
+      if (tabId === 'view-bodega') renderizarBodega();
+      if (tabId === 'view-mapa') renderizarMapa();
+      if (tabId === 'view-produccion') renderizarProduccion();
+      if (tabId === 'view-inventario') renderizarInventario();
+      if (tabId === 'view-auditoria') renderizarAuditoria();
+      if (tabId === 'view-respaldo') renderizarGestionFilas();
+    }
+
+    function actualizarEstadisticas() {
+      const enStock = state.bultos.filter(b => b.estado === 'En Stock');
+      const totalKilos = enStock.reduce((acc, b) => acc + b.kilos, 0);
+      document.getElementById('bultos-stock-count').innerText = enStock.length;
+      document.getElementById('bultos-stock-kilos').innerText = `${totalKilos.toFixed(1)} kg`;
+      document.getElementById('stock-kilos-badge').innerText = `${totalKilos.toFixed(1)} kg`;
+
+      const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
+      document.getElementById('tab-count-planta').innerText = enPlanta.length;
+      document.getElementById('planta-pallets-count').innerText = `${enPlanta.length} pallets`;
+      document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
+    }
+
+    // --- REGLA FIFO EXACTA (COMPARADOR SWIFT) ---
+    function compararFIFO(a, b) {
+      const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
+      const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
+      if (fa.getTime() !== fb.getTime()) return fa - fb;
+      return a.serial.localeCompare(b.serial);
+    }
+
+    function obtenerListasFIFOPorComponente() {
+      const enStock = state.bultos.filter(b => b.estado === 'En Stock');
+      const agrupados = {};
+      enStock.forEach(b => {
+        if (!agrupados[b.nombreMaterial]) agrupados[b.nombreMaterial] = [];
+        agrupados[b.nombreMaterial].push(b);
+      });
+
+      return Object.keys(agrupados).map(nombreMat => {
+        const ordenados = agrupados[nombreMat].sort(compararFIFO);
+        return {
+          nombreMaterial: nombreMat,
+          codigoMaterial: ordenados[0].codigoMaterial,
+          palletsEnStock: ordenados,
+          palletPrioritario: ordenados[0],
+          totalKilos: ordenados.reduce((a, b) => a + b.kilos, 0)
+        };
+      }).sort((a, b) => a.nombreMaterial.localeCompare(b.nombreMaterial));
+    }
+
+    function esPalletFIFOPrioritario(serial) {
+      const listas = obtenerListasFIFOPorComponente();
+      return listas.some(g => g.palletPrioritario && g.palletPrioritario.serial === serial);
+    }
+
+    // --- RECEPCIÓN CAMIÓN ---
+    function poblarSelectores() {
+      const selMat = document.getElementById('rec-material');
+      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg)</option>`).join('');
+      actualizarPlantilla();
+
+      const selFila = document.getElementById('rec-fila');
+      const disponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
+      selFila.innerHTML = disponibles.map(f => `<option value="${f}">${f}</option>`).join('');
+    }
+
+    function actualizarPlantilla() {
+      const idx = document.getElementById('rec-material').value;
+      const mat = state.catalogo[idx];
+      document.getElementById('rec-codigo').value = mat.codigo;
+      document.getElementById('rec-nombre').value = mat.nombre;
+      document.getElementById('rec-peso').value = mat.pesoDefault;
+      validarFormularioCamion();
+    }
+
+    function setCantidad(num) {
+      document.getElementById('rec-cantidad').value = num;
+      validarFormularioCamion();
+    }
+
+    function validarFormularioCamion() {
+      const codigo = document.getElementById('rec-codigo').value.trim();
+      const nombre = document.getElementById('rec-nombre').value.trim();
+      const lote = document.getElementById('rec-lote').value.trim();
+      const peso = parseFloat(document.getElementById('rec-peso').value);
+      const cant = parseInt(document.getElementById('rec-cantidad').value);
+
+      const esValido = codigo && nombre && lote && !isNaN(peso) && peso > 0 && cant > 0;
+      const btn = document.getElementById('btn-crear-lote');
+      btn.disabled = !esValido;
+      btn.innerText = esValido ? `Crear ${cant} Códigos y Ver Etiquetas` : "Completa los Datos para Crear";
+
+      if (!isNaN(peso) && !isNaN(cant)) {
+        document.getElementById('total-carga-camion').innerText = `Total carga: ${(peso * cant).toFixed(1)} kg`;
+      }
+    }
+
+    function crearLote() {
+      const matIdx = document.getElementById('rec-material').value;
+      const mat = state.catalogo[matIdx];
+      const lote = document.getElementById('rec-lote').value.trim().toUpperCase();
+      const fila = document.getElementById('rec-fila').value;
+      const peso = parseFloat(document.getElementById('rec-peso').value);
+      const cantidad = parseInt(document.getElementById('rec-cantidad').value);
+
+      const nuevos = [];
+      for (let i = 0; i < cantidad; i++) {
+        state.contador++;
+        const serial = `BTO-${String(state.contador).padStart(5, '0')}`;
+        const bulto = {
+          id: crypto.randomUUID(),
+          serial: serial,
+          codigoMaterial: mat.codigo,
+          nombreMaterial: mat.nombre,
+          kilos: peso,
+          kilosIniciales: peso,
+          tipoEmpaque: mat.tipoEmpaque,
+          lote: lote,
+          filaBodega: fila,
+          posicionFila: 1,
+          nivelApilado: 1,
+          fechaCreacion: new Date().toISOString(),
+          fechaIngresoBodega: null,
+          estado: "Creado",
+          ajustadoEnTurno: false
+        };
+        state.bultos.push(bulto);
+        nuevos.push(bulto);
+      }
+      guardarTodo();
+      renderizarEtiquetasBrother(nuevos);
+      document.getElementById('rec-lote').value = "";
+      validarFormularioCamion();
+    }
+
+    function renderizarEtiquetasBrother(pallets) {
+      const cont = document.getElementById('contenedor-etiquetas-brother');
+      cont.innerHTML = pallets.map(b => `
+        <div class="etiqueta-brother">
+          <h4 style="font-size: 1rem; margin-bottom: 4px;">${b.nombreMaterial}</h4>
+          <p style="font-size: 0.7rem; font-weight: bold; color: var(--secondary-text);">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
+          <svg id="svg-${b.serial}" style="width: 100%; height: 65px; margin: 4px 0;"></svg>
+          <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 2px;">${b.serial}</p>
+          <div style="display: flex; justify-content: space-between; border-top: 1px solid black; padding-top: 6px; font-weight: bold;">
+            <small>${b.tipoEmpaque.toUpperCase()}<br>[${b.filaBodega}]</small>
+            <span style="font-size: 1.2rem;">${b.kilos.toFixed(1)} kg</span>
+          </div>
+        </div>
+      `).join('');
+
+      pallets.forEach(b => {
+        JsBarcode(`#svg-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
+      });
+
+      abrirModal('modal-etiquetas');
+    }
+
+    // --- BODEGA Y FIFO ---
+    function setModoOperacion(modo) {
+      state.modoOperacion = modo;
+      const esEntrada = (modo === 'ENTRADA BODEGA');
+      document.getElementById('btn-modo-entrada').className = esEntrada ? 'btn btn-green' : 'btn btn-bordered';
+      document.getElementById('btn-modo-despacho').className = esEntrada ? 'btn btn-bordered' : 'btn btn-orange';
+
+      const banner = document.getElementById('banner-modo');
+      banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
+      banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
+      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO (LISTAS FIFO POR COMPONENTE)';
+      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock sellando su fecha FIFO.' : 'Cada nombre de componente tiene su lista y cola FIFO independiente.';
+
+      document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
+      document.getElementById('btn-scanner-principal').innerText = esEntrada ? 'Escanear Entrada a Bodega' : 'Escanear Cualquier Pallet con Cámara';
+      document.getElementById('btn-scanner-principal').className = esEntrada ? 'btn btn-blue' : 'btn btn-orange';
+
+      if (!esEntrada) renderizarBodega();
+    }
+
+    function renderizarBodega() {
+      const cont = document.getElementById('contenedor-fifo-listas');
+      const componentes = obtenerListasFIFOPorComponente();
+
+      if (componentes.length === 0) {
+        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay componentes en stock para despachar.</small>`;
+      } else {
+        cont.innerHTML = componentes.map(g => `
+          <div class="card" style="border-left: 4px solid var(--orange);">
+            <div style="display: flex; justify-content: space-between;">
+              <div>
+                <strong>${g.nombreMaterial}</strong><br>
+                <small style="color: var(--secondary-text); font-family: monospace;">CÓDIGO: ${g.codigoMaterial}</small>
+              </div>
+              <div style="text-align: right;">
+                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} pallets</b><br>
+                <small>${g.totalKilos.toFixed(0)} kg en total</small>
+              </div>
+            </div>
+
+            <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 900; color: var(--orange);">PRIORITARIO FIFO:</span>
+                <b style="font-family: monospace; font-size: 1rem; margin-left: 4px;">${g.palletPrioritario.serial}</b>
+                <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">${g.palletPrioritario.filaBodega} (Pos ${g.palletPrioritario.posicionFila} - N${g.palletPrioritario.nivelApilado})</span><br>
+                <small style="color: var(--secondary-text);">Lote: ${g.palletPrioritario.lote} • Ingreso: ${new Date(g.palletPrioritario.fechaIngresoBodega || g.palletPrioritario.fechaCreacion).toLocaleDateString()}</small><br>
+                <b style="color: var(--orange); font-size: 0.85rem;">${g.palletPrioritario.kilos.toFixed(0)} kg</b>
+              </div>
+              <button class="btn btn-orange" onclick="iniciarValidacionSalida('${g.palletPrioritario.serial}', '${g.palletPrioritario.filaBodega}', '${g.nombreMaterial}')">Validar Salida</button>
+            </div>
+
+            ${g.palletsEnStock.length > 1 ? `
+              <div style="margin-top: 6px;">
+                <small style="color: var(--secondary-text); font-size: 0.7rem;">Siguientes en cola:</small>
+                <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
+                  ${g.palletsEnStock.slice(1).map(p => `
+                    <div style="background: #f2f2f7; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
+                      <b>${p.serial}</b> ${p.filaBodega} (N${p.nivelApilado}) • ${p.kilos.toFixed(0)}k
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      // Render últimos registros
+      const regCont = document.getElementById('lista-ultimos-registros');
+      regCont.innerHTML = state.movimientos.slice(0, 3).map(m => `
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 0.5px solid var(--border); padding-bottom: 4px;">
+          <div>
+            <b>${m.serialBulto} • ${m.nombreMaterial}</b><br>
+            <small style="color: var(--secondary-text);">${m.detalle}</small>
+          </div>
+          <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+        </div>
+      `).join('');
+    }
+
+    function procesarEscaneoBodega(serial, forzarSinFIFO = false) {
+      const idx = state.bultos.findIndex(b => b.serial === serial);
+      if (idx === -1) { alert(`El código '${serial}' no existe en la base de datos.`); return; }
+
+      let bulto = state.bultos[idx];
+
+      if (state.modoOperacion === "ENTRADA BODEGA") {
+        if (bulto.estado === "En Stock") { alert(`¡Alerta! El bulto ${bulto.serial} ya está EN STOCK en bodega.`); return; }
+
+        bulto.estado = "En Stock";
+        bulto.fechaIngresoBodega = new Date().toISOString();
+
+        const enFila = state.bultos.filter(b => b.filaBodega === bulto.filaBodega && b.estado === 'En Stock');
+        const maxPos = enFila.map(b => b.posicionFila).reduce((a, b) => Math.max(a, b), 0);
+        const enUltima = enFila.filter(b => b.posicionFila === maxPos);
+
+        if (enUltima.length === 1) {
+          bulto.posicionFila = maxPos;
+          bulto.nivelApilado = 2;
+        } else {
+          bulto.posicionFila = maxPos + 1;
+          bulto.nivelApilado = 1;
+        }
+
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: bulto.kilos,
+          tipo: "ENTRADA BODEGA",
+          detalle: `Ingreso formal a ${bulto.filaBodega} (Pos ${bulto.posicionFila}-N${bulto.nivelApilado}) (+ ${bulto.kilos.toFixed(1)} kg)`
+        });
+
+      } else {
+        if (bulto.estado === "En Tránsito") { alert(`El bulto ${bulto.serial} ya se encuentra despachado en Tránsito.`); return; }
+        if (bulto.estado === "Consumido") { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
+        if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
+
+        // Validación FIFO discriminando por nombre exacto
+        if (!forzarSinFIFO) {
+          const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock').sort(compararFIFO);
+          if (mismoMaterial.length > 0 && mismoMaterial[0].serial !== bulto.serial) {
+            const masAntiguo = mismoMaterial[0];
+            const msg = `⚠️ Advertencia de Quiebre FIFO\n\nPara '${bulto.nombreMaterial}', el pallet prioritario está en [${masAntiguo.filaBodega}] Posición ${masAntiguo.posicionFila} (Nivel ${masAntiguo.nivelApilado}): ${masAntiguo.serial} (Lote: ${masAntiguo.lote}).\n\n¿Deseas forzar el despacho fuera de regla?`;
+            if (confirm(msg)) {
+              procesarEscaneoBodega(serial, true);
+            }
+            return;
+          }
+        }
+
+        bulto.estado = "En Tránsito";
+        bulto.ajustadoEnTurno = false;
+
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: bulto.kilos,
+          tipo: "DESPACHO PRODUCCIÓN (FIFO)",
+          detalle: `Despacho FIFO desde ${bulto.filaBodega} (Pos ${bulto.posicionFila}) a Producción (${bulto.kilos.toFixed(1)} kg)`
+        });
+      }
+
+      guardarTodo();
+      renderizarBodega();
+      alert(`Operación completada con éxito para ${serial}`);
+    }
+
+    function validarManual() {
+      const input = document.getElementById('serial-manual');
+      const val = input.value.trim().toUpperCase();
+      if (val) {
+        procesarEscaneoBodega(val);
+        input.value = "";
+      }
+    }
+
+    // --- MAPA VISUAL ---
+    function renderizarMapa() {
+      const cont = document.getElementById('mapa-filas-render');
+      const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
+
+      cont.innerHTML = todas.map(fila => {
+        const esRet = (fila === nombreFilaRetornados);
+        const palletsFila = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
+
+        const agrupados = {};
+        palletsFila.forEach(b => {
+          if (!agrupados[b.posicionFila]) agrupados[b.posicionFila] = [];
+          agrupados[b.posicionFila].push(b);
+        });
+
+        const maxPos = Math.max(Object.keys(agrupados).map(Number).reduce((a, b) => Math.max(a, b), 0), 4);
+        let posicionesHtml = "";
+
+        for (let p = 1; p <= maxPos; p++) {
+          const bultosPos = agrupados[p] || [];
+          const n1 = bultosPos.find(b => b.nivelApilado === 1) || bultosPos[0];
+          const n2 = bultosPos.find(b => b.nivelApilado === 2 && b !== n1);
+
+          posicionesHtml += `
+            <div class="pos-box">
+              <small style="font-size: 0.65rem; color: var(--secondary-text); font-weight: bold;">Pos ${p}</small>
+              ${renderSlot(n2, 'N2 (Arriba)', esRet)}
+              ${renderSlot(n1, 'N1 (Piso)', esRet)}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="fila-col" style="${esRet ? 'border: 1.5px solid var(--purple); background: rgba(175, 82, 222, 0.08);' : ''}">
+            <div class="fila-header" style="${esRet ? 'color: var(--purple); border-color: var(--purple);' : ''}">
+              ${fila}<br><small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} pallets</small>
+            </div>
+            ${posicionesHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSlot(pallet, nivelTexto, esRet) {
+      if (!pallet) return `<div class="pallet-slot empty">Vacío (${nivelTexto})</div>`;
+      const esFIFO = esPalletFIFOPrioritario(pallet.serial);
+
+      return `
+        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" style="${!esFIFO ? (esRet ? 'background: rgba(175, 82, 222, 0.15); color: var(--purple); border: 1px solid var(--purple);' : 'background: #e5e5ea; border: 1px solid var(--border);') : ''}" onclick="verDetallePallet('${pallet.serial}')">
+          <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <span>${pallet.serial}</span>
+            ${esFIFO ? '<span>⭐</span>' : ''}
+          </div>
+          <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pallet.nombreMaterial}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
+            <span>${pallet.lote}</span>
+            <b>${pallet.kilos.toFixed(0)}k</b>
+          </div>
+        </div>
+      `;
+    }
+
+    function compactarPosiciones() {
+      if (!confirm("¿Deseas compactar pasillos? Se eliminarán posiciones vacías corriendo los pallets hacia el frente.")) return;
+
+      const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
+      todas.forEach(fila => {
+        const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock')
+          .sort((a, b) => (a.posicionFila - b.posicionFila) || (a.nivelApilado - b.nivelApilado));
+
+        let posActual = 1;
+        let nivelActual = 1;
+
+        pallets.forEach(p => {
+          p.posicionFila = posActual;
+          p.nivelApilado = nivelActual;
+          if (nivelActual === 1) {
+            nivelActual = 2;
+          } else {
+            nivelActual = 1;
+            posActual++;
+          }
+        });
+      });
+
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: "PLANO",
+        nombreMaterial: "Reordenamiento",
+        kilos: 0,
+        tipo: "COMPACTACIÓN DE POSICIONES",
+        detalle: "Se compactaron posiciones vacías corriendo pallets hacia el frente."
+      });
+
+      guardarTodo();
+      renderizarMapa();
+      alert("¡Bodega compactada! Se eliminaron los espacios vacíos.");
+    }
+
+    function verDetallePallet(serial) {
+      const b = state.bultos.find(x => x.serial === serial);
+      if (!b) return;
+
+      const contEtiqueta = document.getElementById('render-etiqueta-detalle');
+      contEtiqueta.innerHTML = `
+        <div class="etiqueta-brother" style="width: 100%; margin: 0 0 10px 0;">
+          <h4>${b.nombreMaterial}</h4>
+          <p style="font-size: 0.7rem;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
+          <svg id="svg-det-${b.serial}" style="width: 100%; height: 55px;"></svg>
+          <p style="font-family: monospace; font-weight: 900;">${b.serial}</p>
+        </div>
+      `;
+      JsBarcode(`#svg-det-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
+
+      document.getElementById('render-datos-detalle').innerHTML = `
+        <div class="card" style="margin: 0; font-size: 0.8rem;">
+          <p><b>Sector / Fila:</b> ${b.filaBodega}</p>
+          <p><b>Posición en Pasillo:</b> Posición ${b.posicionFila}</p>
+          <p><b>Nivel de Apilamiento:</b> ${b.nivelApilado === 1 ? 'Nivel 1 (Piso / Base)' : 'Nivel 2 (Superior / Arriba)'}</p>
+          <p><b>Regla FIFO:</b> ${esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera'}</p>
+          <hr style="margin: 6px 0;">
+          <p><b>Kilos:</b> ${b.kilos.toFixed(1)} kg</p>
+          <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
+        </div>
+      `;
+      abrirModal('modal-pallet-mapa');
+    }
+
+    // --- PLANTA / PRODUCCIÓN ---
+    function renderizarProduccion() {
+      const cont = document.getElementById('lista-pallets-planta');
+      const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
+
+      if (enPlanta.length === 0) {
+        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay pallets en tránsito de producción.</small>`;
+      } else {
+        cont.innerHTML = enPlanta.map(b => `
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <b>${b.serial}</b> ${b.ajustadoEnTurno ? '<span style="font-size: 0.65rem; background: rgba(0, 122, 255, 0.15); color: var(--blue); padding: 2px 4px; border-radius: 4px;">Ajustado</span>' : ''}<br>
+              <span style="font-size: 0.8rem;">${b.nombreMaterial}</span><br>
+              <small style="color: var(--secondary-text);">Lote: ${b.lote} • ${b.filaBodega} • Inicial: ${b.kilosIniciales.toFixed(0)} kg</small>
+            </div>
+            <div style="text-align: right;">
+              <b style="color: ${b.kilos < b.kilosIniciales ? 'var(--orange)' : 'var(--purple)'};">${b.kilos.toFixed(1)} kg</b>
+              <div style="display: flex; gap: 4px; margin-top: 4px;">
+                <button class="btn btn-purple" style="font-size: 0.7rem; padding: 4px 6px;" onclick="abrirAjusteKilos('${b.serial}')">Pesar</button>
+                <button class="btn btn-green" style="font-size: 0.7rem; padding: 4px 6px;" onclick="retornarABodega('${b.serial}')">A Bodega</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function abrirAjusteKilos(serial) {
+      const b = state.bultos.find(x => x.serial === serial);
+      if (!b) return;
+      document.getElementById('ajuste-pallet-info').innerText = `${b.serial} - ${b.nombreMaterial} (Actual: ${b.kilos.toFixed(1)} kg)`;
+      document.getElementById('ajuste-nuevos-kilos').value = b.kilos;
+      document.getElementById('ajuste-nuevos-kilos').dataset.serial = b.serial;
+      abrirModal('modal-ajuste-kilos');
+    }
+
+    function confirmarAjusteKilos() {
+      const serial = document.getElementById('ajuste-nuevos-kilos').dataset.serial;
+      const bulto = state.bultos.find(x => x.serial === serial);
+      const nuevos = parseFloat(document.getElementById('ajuste-nuevos-kilos').value);
+      const motivo = document.getElementById('ajuste-motivo').value || "Consumo en producción";
+
+      if (isNaN(nuevos)) return;
+      const dif = nuevos - bulto.kilos;
+      if (dif !== 0) {
+        bulto.kilos = Math.max(0, nuevos);
+        bulto.ajustadoEnTurno = true;
+        if (bulto.kilos === 0) bulto.estado = "Consumido";
+
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: Math.abs(dif),
+          tipo: "AJUSTE KILOS",
+          detalle: dif < 0 ? `Consumo registrado: ${Math.abs(dif).toFixed(1)} kg (${motivo}). Saldo real: ${bulto.kilos.toFixed(1)} kg` : `Ajuste positivo: +${dif.toFixed(1)} kg (${motivo}). Total: ${bulto.kilos.toFixed(1)} kg`
+        });
+        guardarTodo();
+        renderizarProduccion();
+      }
+      cerrarModal('modal-ajuste-kilos');
+    }
+
+    function retornarABodega(serial) {
+      const bulto = state.bultos.find(x => x.serial === serial);
+      bulto.estado = "En Stock";
+      bulto.ajustadoEnTurno = false;
+      bulto.filaBodega = nombreFilaRetornados;
+      bulto.fechaIngresoBodega = new Date().toISOString();
+
+      const enRet = state.bultos.filter(b => b.filaBodega === nombreFilaRetornados && b.estado === 'En Stock');
+      const maxPos = enRet.map(b => b.posicionFila).reduce((a, b) => Math.max(a, b), 0);
+      const enUltima = enRet.filter(b => b.posicionFila === maxPos);
+
+      if (enUltima.length === 1) {
+        bulto.posicionFila = maxPos;
+        bulto.nivelApilado = 2;
+      } else {
+        bulto.posicionFila = maxPos + 1;
+        bulto.nivelApilado = 1;
+      }
+
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: bulto.serial,
+        nombreMaterial: bulto.nombreMaterial,
+        kilos: bulto.kilos,
+        tipo: "RETORNO A BODEGA",
+        detalle: `Retornado a [${nombreFilaRetornados}] (Pos ${bulto.posicionFila}-N${bulto.nivelApilado}) (+ ${bulto.kilos.toFixed(1)} kg)`
+      });
+
+      guardarTodo();
+      renderizarProduccion();
+      alert(`Pallet ${serial} retornado a sector Retornados de Bodega.`);
+    }
+
+    function consumirRestantes() {
+      if (!confirm("¿Consumir todo lo no pistoleado? Los pallets en tránsito se darán por consumidos en su totalidad.")) return;
+      const noPistoleados = state.bultos.filter(b => b.estado === 'En Tránsito' && !b.ajustadoEnTurno);
+
+      noPistoleados.forEach(b => {
+        const k = b.kilos;
+        b.kilos = 0;
+        b.estado = "Consumido";
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: b.serial,
+          nombreMaterial: b.nombreMaterial,
+          kilos: k,
+          tipo: "CONSUMO FINAL",
+          detalle: `Consumo total por cierre de turno (- ${k.toFixed(1)} kg)`
+        });
+      });
+
+      guardarTodo();
+      renderizarProduccion();
+    }
+
+    // --- INVENTARIO GENERAL ---
+    function renderizarInventario() {
+      const filtro = document.getElementById('inv-filtro-estado').value;
+      const criterio = document.getElementById('inv-agrupar').value;
+      const cont = document.getElementById('lista-inventario-agrupado');
+
+      const filtrados = (filtro === "Todos") ? state.bultos : state.bultos.filter(b => b.estado === filtro);
+      const agrupados = {};
+
+      filtrados.forEach(b => {
+        let clave = b.nombreMaterial;
+        if (criterio === "Por Fila") clave = b.filaBodega;
+        if (criterio === "Por Lote") clave = `Lote: ${b.lote}`;
+        if (criterio === "Por Estado") clave = b.estado;
+
+        if (!agrupados[clave]) agrupados[clave] = [];
+        agrupados[clave].push(b);
+      });
+
+      cont.innerHTML = Object.keys(agrupados).sort().map(clave => {
+        const lista = agrupados[clave];
+        const totKilos = lista.reduce((a, b) => a + b.kilos, 0);
+
+        return `
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 6px;">
+              <b>${clave}</b>
+              <b style="color: var(--blue); font-size: 0.85rem;">${totKilos.toFixed(1)} kg</b>
+            </div>
+            ${lista.map(b => `
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 4px 0;">
+                <div>
+                  <b>${b.serial}</b> <span style="font-size: 0.7rem; color: var(--secondary-text);">(${b.filaBodega})</span><br>
+                  <small>${b.nombreMaterial} • Lote: ${b.lote}</small>
+                </div>
+                <b>${b.kilos.toFixed(1)} kg</b>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function borrarCreadosNoEscaneados() {
+      const cant = state.bultos.filter(b => b.estado === 'Creado').length;
+      if (cant === 0) { alert("No hay bultos creados pendientes de ingresar."); return; }
+      if (confirm(`¿Borrar definitivamente ${cant} bultos creados que nunca ingresaron a bodega?`)) {
+        state.bultos = state.bultos.filter(b => b.estado !== 'Creado');
+        guardarTodo();
+        renderizarInventario();
+      }
+    }
+
+    // --- AUDITORÍA DE FLUJOS ---
+    function renderizarAuditoria() {
+      const cont = document.getElementById('lista-auditoria-agrupada');
+      const agrupados = {};
+
+      state.movimientos.forEach(m => {
+        const fechaCorta = new Date(m.fecha).toLocaleDateString();
+        if (!agrupados[fechaCorta]) agrupados[fechaCorta] = [];
+        agrupados[fechaCorta].push(m);
+      });
+
+      cont.innerHTML = Object.keys(agrupados).map(fecha => `
+        <div class="card">
+          <strong style="font-size: 0.9rem; border-bottom: 1px solid var(--border); display: block; padding-bottom: 4px; margin-bottom: 6px;">${fecha}</strong>
+          ${agrupados[fecha].map(m => `
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 0.5px solid var(--border);">
+              <div>
+                <b>${m.serialBulto} -${m.nombreMaterial}</b><br>
+                <small style="color: var(--secondary-text);">${m.detalle}</small>
+              </div>
+              <div style="text-align: right;">
+                <b>${m.kilos > 0 ? m.kilos.toFixed(1) + ' kg' : ''}</b><br>
+                <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    // --- GESTIÓN DE FILAS Y CATÁLOGO ---
+    function renderizarGestionFilas() {
+      const cont = document.getElementById('lista-filas-gestion');
+      cont.innerHTML = state.filasBodega.map((f, i) => {
+        const count = state.bultos.filter(b => b.filaBodega === f && b.estado === 'En Stock').length;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
+            <div>
+              ${modoEdicionFilas ? `<button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, -1)">▲</button> <button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, 1)">▼</button>` : ''}
+              <b>${f}</b>
+            </div>
+            <div>
+              <small style="color: var(--secondary-text); margin-right: 8px;">${count} pallets</small>
+              <button class="btn btn-red" style="font-size: 0.7rem; padding: 3px 6px;" onclick="eliminarFila('${f}')">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Catálogo render
+      const catCont = document.getElementById('lista-catalogo-gestion');
+      catCont.innerHTML = state.catalogo.map(c => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
+          <div>
+            <b>${c.nombre}</b><br>
+            <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
+          </div>
+          <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
+        </div>
+      `).join('');
+    }
+
+    function toggleModoEditarFilas() {
+      modoEdicionFilas = !modoEdicionFilas;
+      renderizarGestionFilas();
+    }
+
+    function agregarFila() {
+      const input = document.getElementById('nueva-fila-nombre');
+      const nombre = input.value.trim();
+      if (!nombre) return;
+      if (nombre.toLowerCase() === nombreFilaRetornados.toLowerCase()) { alert(`El nombre '${nombreFilaRetornados}' está reservado.`); return; }
+      if (!state.filasBodega.includes(nombre)) {
+        state.filasBodega.push(nombre);
+        guardarTodo();
+        poblarSelectores();
+        renderizarGestionFilas();
+        input.value = "";
+      } else {
+        alert("Esta fila ya existe.");
+      }
+    }
+
+    function eliminarFila(nombre) {
+      const count = state.bultos.filter(b => b.filaBodega === nombre && b.estado === 'En Stock').length;
+      if (count > 0) { alert(`No se puede eliminar '${nombre}' porque contiene ${count} pallets en stock.`); return; }
+      state.filasBodega = state.filasBodega.filter(f => f !== nombre);
+      guardarTodo();
+      poblarSelectores();
+      renderizarGestionFilas();
+    }
+
+    function moverFila(idx, dir) {
+      const nuevo = idx + dir;
+      if (nuevo >= 0 && nuevo < state.filasBodega.length) {
+        const temp = state.filasBodega[idx];
+        state.filasBodega[idx] = state.filasBodega[nuevo];
+        state.filasBodega[nuevo] = temp;
+        guardarTodo();
+        renderizarGestionFilas();
+      }
+    }
+
+    function abrirModalMaterial(id) {
+      document.getElementById('editor-mat-id').value = id || "";
+      if (id) {
+        const m = state.catalogo.find(x => x.id === id);
+        document.getElementById('editor-mat-titulo').innerText = "Modificar Material";
+        document.getElementById('editor-mat-codigo').value = m.codigo;
+        document.getElementById('editor-mat-nombre').value = m.nombre;
+        document.getElementById('editor-mat-peso').value = m.pesoDefault;
+        document.getElementById('editor-mat-empaque').value = m.tipoEmpaque;
+        document.getElementById('btn-eliminar-material').style.display = "block";
+      } else {
+        document.getElementById('editor-mat-titulo').innerText = "Nuevo Material";
+        document.getElementById('editor-mat-codigo').value = "";
+        document.getElementById('editor-mat-nombre').value = "";
+        document.getElementById('editor-mat-peso').value = 1200;
+        document.getElementById('editor-mat-empaque').value = "Pallet";
+        document.getElementById('btn-eliminar-material').style.display = "none";
+      }
+      abrirModal('modal-editor-material');
+    }
+
+    function guardarMaterialCatalogo() {
+      const id = document.getElementById('editor-mat-id').value;
+      const codigo = document.getElementById('editor-mat-codigo').value.trim().toUpperCase();
+      const nombre = document.getElementById('editor-mat-nombre').value.trim();
+      const peso = parseFloat(document.getElementById('editor-mat-peso').value);
+      const empaque = document.getElementById('editor-mat-empaque').value;
+
+      if (!codigo || !nombre || isNaN(peso)) return;
+
+      if (id) {
+        const m = state.catalogo.find(x => x.id === id);
+        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.tipoEmpaque = empaque;
+      } else {
+        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, tipoEmpaque: empaque });
+      }
+      guardarTodo();
+      poblarSelectores();
+      renderizarGestionFilas();
+      cerrarModal('modal-editor-material');
+    }
+
+    function eliminarMaterialCatalogo() {
+      const id = document.getElementById('editor-mat-id').value;
+      if (confirm("¿Eliminar este material del catálogo?")) {
+        state.catalogo = state.catalogo.filter(x => x.id !== id);
+        guardarTodo();
+        poblarSelectores();
+        renderizarGestionFilas();
+        cerrarModal('modal-editor-material');
+      }
+    }
+
+    // --- CÁMARA NATIVA HTML5 QRCODE ---
+    function abrirCamara(objetivo) {
+      palletObjetivoFIFO = objetivo;
+      const label = document.getElementById('scanner-objetivo-msg');
+      label.innerText = objetivo ? `DEBES VALIDAR ESCANEANDO: ${objetivo}` : "";
+      abrirModal('modal-scanner');
+
+      scannerActivo = new Html5Qrcode("reader");
+      scannerActivo.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 240 },
+        code => {
+          cerrarScanner();
+          const serial = code.trim().toUpperCase();
+          if (palletObjetivoFIFO && serial !== palletObjetivoFIFO) {
+            alert(`Código incorrecto. Escaneaste '${serial}', pero debes validar '${palletObjetivoFIFO}'.`);
+            return;
+          }
+          procesarEscaneoBodega(serial);
+        }
+      ).catch(err => {
+        alert("Error de cámara: " + err);
+        cerrarScanner();
+      });
+    }
+
+    function abrirCamaraPlanta() {
+      abrirModal('modal-scanner');
+      document.getElementById('scanner-objetivo-msg').innerText = "Escanear Pallet en Planta";
+
+      scannerActivo = new Html5Qrcode("reader");
+      scannerActivo.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 240 },
+        code => {
+          cerrarScanner();
+          const serial = code.trim().toUpperCase();
+          const b = state.bultos.find(x => x.serial === serial);
+          if (!b) { alert(`El código '${serial}' no existe.`); return; }
+          if (b.estado !== 'En Tránsito') { alert(`El bulto ${b.serial} no se encuentra en Producción.`); return; }
+          abrirAjusteKilos(serial);
+        }
+      ).catch(err => {
+        alert("Error de cámara: " + err);
+        cerrarScanner();
+      });
+    }
+
+    function iniciarValidacionSalida(serial, fila, mat) {
+      abrirCamara(serial);
+    }
+
+    function cerrarScanner() {
+      if (scannerActivo) {
+        scannerActivo.stop().then(() => {
+          scannerActivo.clear();
+          cerrarModal('modal-scanner');
+        }).catch(() => cerrarModal('modal-scanner'));
+      } else {
+        cerrarModal('modal-scanner');
+      }
+    }
+
+    // --- ENTRADA FÍSICA USB-HID (PISTOLA LECTORA) ---
+    let bufferPistola = "";
+    let timeoutPistola;
+    window.addEventListener('keydown', e => {
+      if (document.activeElement.tagName !== 'INPUT' || document.activeElement.id === 'serial-manual') {
+        clearTimeout(timeoutPistola);
+        if (e.key === 'Enter') {
+          if (bufferPistola.length >= 4) {
+            procesarEscaneoBodega(bufferPistola.trim().toUpperCase());
+            bufferPistola = "";
+          }
+        } else if (e.key.length === 1) {
+          bufferPistola += e.key;
+          timeoutPistola = setTimeout(() => { bufferPistola = ""; }, 250);
+        }
+      }
+    });
+
+    // --- MODALES AUXILIARES ---
+    function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
+    function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
+
+    // --- EXPORTACIÓN CSV / JSON (IDÉNTICO A SWIFT) ---
+    function exportarCSV() {
+      let csv = "ID;Fecha;Serial;Material;Kilos;Tipo Movimiento;Detalle\n";
+      state.movimientos.forEach(m => {
+        csv += `${m.id};${m.fecha};${m.serialBulto};${m.nombreMaterial};${m.kilos};${m.tipo};\"${m.detalle}\"\n`;
+      });
+      descargarArchivo(csv, "Kardex_Movimientos_Planta.csv", "text/csv");
+    }
+
+    function exportarJSON() {
+      guardarTodo();
+      descargarArchivo(JSON.stringify(state, null, 2), "Respaldo_ControlFlujos.json", "application/json");
+    }
+
+    function importarJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          state = JSON.parse(evt.target.result);
+          guardarTodo();
+          poblarSelectores();
+          renderizarBodega();
+          alert(`¡Respaldo restaurado! (${state.bultos.length} bultos y ${state.filasBodega.length} filas)`);
+        } catch (err) {
+          alert("Error al restaurar: archivo incompatible.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function descargarArchivo(contenido, nombre, tipo) {
+      const blob = new Blob([contenido], { type: tipo });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nombre;
+      a.click();
+    }
+
+    // Registro PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
+    }
+
+    window.onload = cargarTodo;
+  </script>
+</body>
+</html>
