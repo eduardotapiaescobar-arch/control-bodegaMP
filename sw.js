@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bodega-cache-v1';
+const CACHE_NAME = 'bodega-cache-v2';
 const urls = [
   './',
   './index.html',
