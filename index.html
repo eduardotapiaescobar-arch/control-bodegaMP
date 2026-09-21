@@ -7,8 +7,9 @@
   <link rel="manifest" href="./manifest.json">
   <title>Bodega MP</title>
 
-  <!-- Librerías equivalentes para Code128 y Escáner de Cámara -->
+  <!-- Librerías para Código 128, Generación Directa de PDF y Escáner de Cámara -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -26,7 +27,7 @@
       --gray: #8e8e93;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding-bottom: 70px; user-select: none; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 75px; user-select: none; }
 
     header { background: #1c1c1e; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
     header h1 { font-size: 1.1rem; }
@@ -45,11 +46,14 @@
 
     input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: white; }
 
-    /* Barra inferior */
-    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #f2f2f7; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
-    .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.65rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    /* Barra inferior ajustada para evitar desbordes */
+    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #f2f2f7; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+    .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.68rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
     .tab-item.active { color: var(--blue); font-weight: bold; }
     .tab-item svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* Insignia numérica en pestañas */
+    .tab-badge { position: absolute; top: 1px; right: 20%; background: var(--purple); color: white; font-size: 0.6rem; font-weight: bold; padding: 1px 5px; border-radius: 10px; min-width: 14px; }
 
     /* Mapa de Bodega */
     .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; }
@@ -128,7 +132,7 @@
       <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
     </div>
 
-    <!-- Listado FIFO separado por componente -->
+    <!-- Listas FIFO separadas por componente -->
     <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
 
     <button id="btn-scanner-principal" class="btn btn-blue" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="abrirCamara(null)">
@@ -239,7 +243,8 @@
       <button class="btn btn-green" style="width: 100%; margin-bottom: 8px;" onclick="exportarCSV()">Compartir Kardex Único (.CSV)</button>
       <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="exportarJSON()">Exportar Copia Completa (.JSON)</button>
       <input type="file" id="file-import-json" style="display: none;" onchange="importarJSON(event)">
-      <button class="btn btn-orange" style="width: 100%;" onclick="document.getElementById('file-import-json').click()">Restaurar Respaldo Externo</button>
+      <button class="btn btn-orange" style="width: 100%; margin-bottom: 8px;" onclick="document.getElementById('file-import-json').click()">Restaurar Respaldo Externo</button>
+      <button class="btn btn-red" style="width: 100%;" onclick="purgarBaseDeDatos()">Restablecer Base de Datos (Limpiar Todo)</button>
     </div>
 
     <div class="card">
@@ -249,14 +254,16 @@
     </div>
   </section>
 
-  <!-- MODAL ETIQUETAS BROTHER 62MM -->
+  <!-- MODAL ETIQUETAS BROTHER 62MM CON DESCARGA DIRECTA EN PDF -->
   <div id="modal-etiquetas" class="modal">
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3>Etiquetas Generadas</h3>
         <button class="btn btn-bordered" onclick="cerrarModal('modal-etiquetas')">Listo</button>
       </div>
-      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="window.print()">Imprimir Etiquetas (62mm)</button>
+      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="descargarLotePDF()">
+        Descargar PDF Etiquetas (62mm)
+      </button>
       <div id="contenedor-etiquetas-brother"></div>
     </div>
   </div>
@@ -337,8 +344,9 @@
       Mapa
     </div>
     <div class="tab-item" onclick="cambiarTab('view-produccion', this)">
+      <span class="tab-badge" id="badge-planta" style="display: none;">0</span>
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-      Planta (<span id="tab-count-planta">0</span>)
+      Planta
     </div>
     <div class="tab-item" onclick="cambiarTab('view-inventario', this)">
       <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
@@ -355,7 +363,7 @@
   </nav>
 
   <script>
-    // --- ESTADO GLOBAL (IDENTICO A SWIFT VIEWMODEL) ---
+    // --- ESTADO GLOBAL (CERO DATOS FALSOS / COMIENZA TOTALMENTE VACÍO) ---
     const STORAGE_KEY = "FLUJOS_SISTEMA_BODEGA_DATA";
     const nombreFilaRetornados = "Retornados";
 
@@ -370,15 +378,16 @@
         { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet" },
         { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa" }
       ],
-      bultos: [],
+      bultos: [], // Totalmente limpio sin pallets ficticios
       movimientos: []
     };
 
     let palletObjetivoFIFO = null;
     let modoEdicionFilas = false;
     let scannerActivo = null;
+    let ultimoLoteGenerado = [];
 
-    // --- PERSISTENCIA ATÓMICA EN DISCO (LOCALSTORAGE) ---
+    // --- PERSISTENCIA ATÓMICA ---
     function guardarTodo() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       actualizarEstadisticas();
@@ -387,22 +396,32 @@
     function cargarTodo() {
       const guardado = localStorage.getItem(STORAGE_KEY);
       if (guardado) {
-        try { state = JSON.parse(guardado); } catch (e) { console.error(e); }
-      } else {
-        // Inicialización idéntica de Swift si está vacío
-        const hace3Dias = new Date(Date.now() - 86400000 * 3).toISOString();
-        const hace2Dias = new Date(Date.now() - 86400000 * 2).toISOString();
-        const hace1Dia = new Date(Date.now() - 86400000 * 1).toISOString();
-
-        state.bultos = [
-          { id: crypto.randomUUID(), serial: "BTO-00101", codigoMaterial: "RMGE00007", nombreMaterial: "Material - PA6 - Genérico - AZOTY", kilos: 1200, kilosIniciales: 1200, tipoEmpaque: "Pallet", lote: "L-9041", filaBodega: "Fila 1", posicionFila: 1, nivelApilado: 1, fechaCreacion: hace3Dias, fechaIngresoBodega: hace2Dias, estado: "En Stock", ajustadoEnTurno: false },
-          { id: crypto.randomUUID(), serial: "BTO-00102", codigoMaterial: "RMGE00007", nombreMaterial: "Material - PA6 - Genérico - JIANGSU", kilos: 850, kilosIniciales: 850, tipoEmpaque: "Pallet", lote: "L-9042", filaBodega: "Fila 2", posicionFila: 1, nivelApilado: 1, fechaCreacion: hace2Dias, fechaIngresoBodega: hace1Dia, estado: "En Stock", ajustadoEnTurno: false }
-        ];
-        guardarTodo();
+        try { 
+          state = JSON.parse(guardado);
+        } catch (e) { 
+          console.error("Error al cargar localStorage", e); 
+        }
+      }
+      if (!state.filasBodega || state.filasBodega.length === 0) {
+        state.filasBodega = ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"];
       }
       poblarSelectores();
       renderizarBodega();
       actualizarEstadisticas();
+    }
+
+    function purgarBaseDeDatos() {
+      if (!confirm("⚠️ ¿Estás seguro de restablecer toda la base de datos?\nSe borrarán todos los pallets creados y movimientos, dejándola completamente limpia.")) return;
+      state.bultos = [];
+      state.movimientos = [];
+      state.contador = 100;
+      guardarTodo();
+      renderizarBodega();
+      renderizarMapa();
+      renderizarProduccion();
+      renderizarInventario();
+      renderizarAuditoria();
+      alert("Base de datos restablecida. Ya no hay pallets registrados.");
     }
 
     function cambiarTab(tabId, el) {
@@ -427,12 +446,19 @@
       document.getElementById('stock-kilos-badge').innerText = `${totalKilos.toFixed(1)} kg`;
 
       const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
-      document.getElementById('tab-count-planta').innerText = enPlanta.length;
+      const badgePlanta = document.getElementById('badge-planta');
+      if (enPlanta.length > 0) {
+        badgePlanta.style.display = 'inline-block';
+        badgePlanta.innerText = enPlanta.length;
+      } else {
+        badgePlanta.style.display = 'none';
+      }
+
       document.getElementById('planta-pallets-count').innerText = `${enPlanta.length} pallets`;
       document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
     }
 
-    // --- REGLA FIFO EXACTA (COMPARADOR SWIFT) ---
+    // --- REGLA FIFO EXACTA ---
     function compararFIFO(a, b) {
       const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
       const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
@@ -540,6 +566,7 @@
         nuevos.push(bulto);
       }
       guardarTodo();
+      ultimoLoteGenerado = nuevos;
       renderizarEtiquetasBrother(nuevos);
       document.getElementById('rec-lote').value = "";
       validarFormularioCamion();
@@ -549,9 +576,9 @@
       const cont = document.getElementById('contenedor-etiquetas-brother');
       cont.innerHTML = pallets.map(b => `
         <div class="etiqueta-brother">
-          <h4 style="font-size: 1rem; margin-bottom: 4px;">${b.nombreMaterial}</h4>
+          <h4 style="font-size: 0.95rem; margin-bottom: 4px;">${b.nombreMaterial}</h4>
           <p style="font-size: 0.7rem; font-weight: bold; color: var(--secondary-text);">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
-          <svg id="svg-${b.serial}" style="width: 100%; height: 65px; margin: 4px 0;"></svg>
+          <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
           <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 2px;">${b.serial}</p>
           <div style="display: flex; justify-content: space-between; border-top: 1px solid black; padding-top: 6px; font-weight: bold;">
             <small>${b.tipoEmpaque.toUpperCase()}<br>[${b.filaBodega}]</small>
@@ -565,6 +592,66 @@
       });
 
       abrirModal('modal-etiquetas');
+    }
+
+    // --- GENERACIÓN Y DESCARGA DIRECTA DE ARCHIVO PDF (62MM) ---
+    function descargarLotePDF() {
+      if (!ultimoLoteGenerado || ultimoLoteGenerado.length === 0) {
+        alert("No hay etiquetas en el lote para descargar.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      // Formato exacto Brother 62mm continuo (ancho: 62mm, alto: 100mm)
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [62, 100]
+      });
+
+      ultimoLoteGenerado.forEach((b, i) => {
+        if (i > 0) doc.addPage([62, 100], "portrait");
+
+        // Encabezado
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        const lineasNombre = doc.splitTextToSize(b.nombreMaterial, 54);
+        doc.text(lineasNombre, 31, 8, { align: "center" });
+
+        // Línea divisoria
+        doc.setLineWidth(0.3);
+        doc.line(4, 18, 58, 18);
+
+        // Datos técnicos
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "bold");
+        doc.text(`CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}`, 31, 22, { align: "center" });
+
+        // Código de barras generado como imagen canvas
+        const canvas = document.createElement("canvas");
+        JsBarcode(canvas, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
+        const imgBarcode = canvas.toDataURL("image/png");
+        doc.addImage(imgBarcode, "PNG", 6, 26, 50, 24);
+
+        // Serial alfanumérico
+        doc.setFont("courier", "bold");
+        doc.setFontSize(11);
+        doc.text(b.serial, 31, 56, { align: "center" });
+
+        // Caja inferior
+        doc.rect(4, 62, 54, 28);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text(b.tipoEmpaque.toUpperCase(), 8, 72);
+        doc.setFontSize(7.5);
+        doc.text(`[${b.filaBodega}]`, 8, 80);
+
+        doc.setFontSize(13);
+        doc.text(`${b.kilos.toFixed(1)} kg`, 52, 78, { align: "right" });
+      });
+
+      const nombreLote = ultimoLoteGenerado[0].lote || "Lote";
+      doc.save(`Etiquetas_${nombreLote}_62mm.pdf`);
     }
 
     // --- BODEGA Y FIFO ---
@@ -634,7 +721,6 @@
         `).join('');
       }
 
-      // Render últimos registros
       const regCont = document.getElementById('lista-ultimos-registros');
       regCont.innerHTML = state.movimientos.slice(0, 3).map(m => `
         <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 0.5px solid var(--border); padding-bottom: 4px;">
@@ -686,7 +772,6 @@
         if (bulto.estado === "Consumido") { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
         if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
 
-        // Validación FIFO discriminando por nombre exacto
         if (!forzarSinFIFO) {
           const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock').sort(compararFIFO);
           if (mismoMaterial.length > 0 && mismoMaterial[0].serial !== bulto.serial) {
@@ -1079,7 +1164,6 @@
         `;
       }).join('');
 
-      // Catálogo render
       const catCont = document.getElementById('lista-catalogo-gestion');
       catCont.innerHTML = state.catalogo.map(c => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
@@ -1249,29 +1333,11 @@
       }
     }
 
-    // --- ENTRADA FÍSICA USB-HID (PISTOLA LECTORA) ---
-    let bufferPistola = "";
-    let timeoutPistola;
-    window.addEventListener('keydown', e => {
-      if (document.activeElement.tagName !== 'INPUT' || document.activeElement.id === 'serial-manual') {
-        clearTimeout(timeoutPistola);
-        if (e.key === 'Enter') {
-          if (bufferPistola.length >= 4) {
-            procesarEscaneoBodega(bufferPistola.trim().toUpperCase());
-            bufferPistola = "";
-          }
-        } else if (e.key.length === 1) {
-          bufferPistola += e.key;
-          timeoutPistola = setTimeout(() => { bufferPistola = ""; }, 250);
-        }
-      }
-    });
-
     // --- MODALES AUXILIARES ---
     function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
     function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
 
-    // --- EXPORTACIÓN CSV / JSON (IDÉNTICO A SWIFT) ---
+    // --- EXPORTACIÓN CSV / JSON ---
     function exportarCSV() {
       let csv = "ID;Fecha;Serial;Material;Kilos;Tipo Movimiento;Detalle\n";
       state.movimientos.forEach(m => {
@@ -1311,7 +1377,6 @@
       a.click();
     }
 
-    // Registro PWA Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
     }
