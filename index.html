@@ -132,7 +132,6 @@
       <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
     </div>
 
-    <!-- Listas FIFO separadas por componente -->
     <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
 
     <button id="btn-scanner-principal" class="btn btn-blue" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="abrirCamara(null)">
@@ -363,7 +362,6 @@
   </nav>
 
   <script>
-    // --- ESTADO GLOBAL (CERO DATOS FALSOS / COMIENZA TOTALMENTE VACÍO) ---
     const STORAGE_KEY = "FLUJOS_SISTEMA_BODEGA_DATA";
     const nombreFilaRetornados = "Retornados";
 
@@ -378,7 +376,7 @@
         { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet" },
         { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa" }
       ],
-      bultos: [], // Totalmente limpio sin pallets ficticios
+      bultos: [],
       movimientos: []
     };
 
@@ -594,7 +592,7 @@
       abrirModal('modal-etiquetas');
     }
 
-    // --- GENERACIÓN Y DESCARGA DIRECTA DE ARCHIVO PDF (62MM) ---
+    // --- GENERACIÓN DIRECTA DE PDF 62MM ---
     function descargarLotePDF() {
       if (!ultimoLoteGenerado || ultimoLoteGenerado.length === 0) {
         alert("No hay etiquetas en el lote para descargar.");
@@ -602,7 +600,6 @@
       }
 
       const { jsPDF } = window.jspdf;
-      // Formato exacto Brother 62mm continuo (ancho: 62mm, alto: 100mm)
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -612,33 +609,27 @@
       ultimoLoteGenerado.forEach((b, i) => {
         if (i > 0) doc.addPage([62, 100], "portrait");
 
-        // Encabezado
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         const lineasNombre = doc.splitTextToSize(b.nombreMaterial, 54);
         doc.text(lineasNombre, 31, 8, { align: "center" });
 
-        // Línea divisoria
         doc.setLineWidth(0.3);
         doc.line(4, 18, 58, 18);
 
-        // Datos técnicos
         doc.setFontSize(6.5);
         doc.setFont("helvetica", "bold");
         doc.text(`CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}`, 31, 22, { align: "center" });
 
-        // Código de barras generado como imagen canvas
         const canvas = document.createElement("canvas");
         JsBarcode(canvas, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
         const imgBarcode = canvas.toDataURL("image/png");
         doc.addImage(imgBarcode, "PNG", 6, 26, 50, 24);
 
-        // Serial alfanumérico
         doc.setFont("courier", "bold");
         doc.setFontSize(11);
         doc.text(b.serial, 31, 56, { align: "center" });
 
-        // Caja inferior
         doc.rect(4, 62, 54, 28);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8);
@@ -733,6 +724,7 @@
       `).join('');
     }
 
+    // --- PROCESAMIENTO CON CÁLCULO DE APILAMIENTO EXACTO (CORREGIDO) ---
     function procesarEscaneoBodega(serial, forzarSinFIFO = false) {
       const idx = state.bultos.findIndex(b => b.serial === serial);
       if (idx === -1) { alert(`El código '${serial}' no existe en la base de datos.`); return; }
@@ -745,17 +737,12 @@
         bulto.estado = "En Stock";
         bulto.fechaIngresoBodega = new Date().toISOString();
 
-        const enFila = state.bultos.filter(b => b.filaBodega === bulto.filaBodega && b.estado === 'En Stock');
-        const maxPos = enFila.map(b => b.posicionFila).reduce((a, b) => Math.max(a, b), 0);
-        const enUltima = enFila.filter(b => b.posicionFila === maxPos);
+        // Corrección de llenado: cuenta pallets en stock en la misma fila para no saltar la Posición 1
+        const enFila = state.bultos.filter(b => b.filaBodega === bulto.filaBodega && b.estado === 'En Stock' && b.id !== bulto.id);
+        const cantidadActual = enFila.length;
 
-        if (enUltima.length === 1) {
-          bulto.posicionFila = maxPos;
-          bulto.nivelApilado = 2;
-        } else {
-          bulto.posicionFila = maxPos + 1;
-          bulto.nivelApilado = 1;
-        }
+        bulto.posicionFila = Math.floor(cantidadActual / 2) + 1;
+        bulto.nivelApilado = (cantidadActual % 2 === 0) ? 1 : 2;
 
         state.movimientos.unshift({
           id: crypto.randomUUID(),
@@ -1012,17 +999,11 @@
       bulto.filaBodega = nombreFilaRetornados;
       bulto.fechaIngresoBodega = new Date().toISOString();
 
-      const enRet = state.bultos.filter(b => b.filaBodega === nombreFilaRetornados && b.estado === 'En Stock');
-      const maxPos = enRet.map(b => b.posicionFila).reduce((a, b) => Math.max(a, b), 0);
-      const enUltima = enRet.filter(b => b.posicionFila === maxPos);
+      const enRet = state.bultos.filter(b => b.filaBodega === nombreFilaRetornados && b.estado === 'En Stock' && b.id !== bulto.id);
+      const cant = enRet.length;
 
-      if (enUltima.length === 1) {
-        bulto.posicionFila = maxPos;
-        bulto.nivelApilado = 2;
-      } else {
-        bulto.posicionFila = maxPos + 1;
-        bulto.nivelApilado = 1;
-      }
+      bulto.posicionFila = Math.floor(cant / 2) + 1;
+      bulto.nivelApilado = (cant % 2 === 0) ? 1 : 2;
 
       state.movimientos.unshift({
         id: crypto.randomUUID(),
@@ -1377,6 +1358,7 @@
       a.click();
     }
 
+    // Registro PWA Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
     }
