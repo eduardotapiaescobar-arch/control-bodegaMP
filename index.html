@@ -46,13 +46,12 @@
 
     input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: white; }
 
-    /* Barra inferior ajustada para evitar desbordes */
+    /* Barra inferior */
     nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #f2f2f7; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
     .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.68rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
     .tab-item.active { color: var(--blue); font-weight: bold; }
     .tab-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* Insignia numérica en pestañas */
     .tab-badge { position: absolute; top: 1px; right: 20%; background: var(--purple); color: white; font-size: 0.6rem; font-weight: bold; padding: 1px 5px; border-radius: 10px; min-width: 14px; }
 
     /* Mapa de Bodega */
@@ -456,7 +455,7 @@
       document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
     }
 
-    // --- REGLA FIFO EXACTA ---
+    // --- REGLA FIFO ---
     function compararFIFO(a, b) {
       const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
       const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
@@ -592,7 +591,6 @@
       abrirModal('modal-etiquetas');
     }
 
-    // --- GENERACIÓN DIRECTA DE PDF 62MM ---
     function descargarLotePDF() {
       if (!ultimoLoteGenerado || ultimoLoteGenerado.length === 0) {
         alert("No hay etiquetas en el lote para descargar.");
@@ -689,7 +687,9 @@
               <div>
                 <span style="font-size: 0.7rem; font-weight: 900; color: var(--orange);">PRIORITARIO FIFO:</span>
                 <b style="font-family: monospace; font-size: 1rem; margin-left: 4px;">${g.palletPrioritario.serial}</b>
-                <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">${g.palletPrioritario.filaBodega} (Pos ${g.palletPrioritario.posicionFila} - N${g.palletPrioritario.nivelApilado})</span><br>
+                <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
+                  ${g.palletPrioritario.filaBodega} (Pos ${g.palletPrioritario.posicionFila} - N${g.palletPrioritario.nivelApilado})
+                </span><br>
                 <small style="color: var(--secondary-text);">Lote: ${g.palletPrioritario.lote} • Ingreso: ${new Date(g.palletPrioritario.fechaIngresoBodega || g.palletPrioritario.fechaCreacion).toLocaleDateString()}</small><br>
                 <b style="color: var(--orange); font-size: 0.85rem;">${g.palletPrioritario.kilos.toFixed(0)} kg</b>
               </div>
@@ -724,7 +724,6 @@
       `).join('');
     }
 
-    // --- PROCESAMIENTO CON CÁLCULO DE APILAMIENTO EXACTO (CORREGIDO) ---
     function procesarEscaneoBodega(serial, forzarSinFIFO = false) {
       const idx = state.bultos.findIndex(b => b.serial === serial);
       if (idx === -1) { alert(`El código '${serial}' no existe en la base de datos.`); return; }
@@ -737,7 +736,6 @@
         bulto.estado = "En Stock";
         bulto.fechaIngresoBodega = new Date().toISOString();
 
-        // Corrección de llenado: cuenta pallets en stock en la misma fila para no saltar la Posición 1
         const enFila = state.bultos.filter(b => b.filaBodega === bulto.filaBodega && b.estado === 'En Stock' && b.id !== bulto.id);
         const cantidadActual = enFila.length;
 
@@ -1318,13 +1316,13 @@
     function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
     function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
 
-    // --- EXPORTACIÓN CSV / JSON ---
+    // --- EXPORTACIÓN CSV (CON BOM UTF-8 PARA EXCEL) / JSON ---
     function exportarCSV() {
-      let csv = "ID;Fecha;Serial;Material;Kilos;Tipo Movimiento;Detalle\n";
+      let csv = "\uFEFFID;Fecha;Serial;Material;Kilos;Tipo Movimiento;Detalle\n";
       state.movimientos.forEach(m => {
         csv += `${m.id};${m.fecha};${m.serialBulto};${m.nombreMaterial};${m.kilos};${m.tipo};\"${m.detalle}\"\n`;
       });
-      descargarArchivo(csv, "Kardex_Movimientos_Planta.csv", "text/csv");
+      descargarArchivo(csv, "Kardex_Movimientos_Planta.csv", "text/csv;charset=utf-8;");
     }
 
     function exportarJSON() {
@@ -1351,7 +1349,7 @@
     }
 
     function descargarArchivo(contenido, nombre, tipo) {
-      const blob = new Blob([contenido], { type: tipo });
+      const blob = new Blob([contenido], { type: tipo || "text/plain;charset=utf-8;" });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = nombre;
