@@ -291,6 +291,22 @@
     </div>
   </div>
 
+  <!-- MODAL NO CONFORME (DESECHO) -->
+  <div id="modal-no-conforme" class="modal">
+    <div class="modal-content">
+      <h3 style="color: var(--red);">Registrar No Conforme (Desecho)</h3>
+      <p id="nc-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <label style="font-size: 0.8rem;">Kilos a Descontar por Desecho (kg):</label>
+      <input type="number" id="nc-kilos-descontar" placeholder="Ej: 100">
+      <label style="font-size: 0.8rem;">Motivo / Causa:</label>
+      <input type="text" id="nc-motivo" value="Contaminación / Desecho en producción">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-no-conforme')">Cancelar</button>
+        <button class="btn btn-red" style="flex: 1;" onclick="confirmarNoConforme()">Descontar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL EDITOR MATERIAL -->
   <div id="modal-editor-material" class="modal">
     <div class="modal-content">
@@ -945,6 +961,7 @@
               <b style="color: ${b.kilos < b.kilosIniciales ? 'var(--orange)' : 'var(--purple)'};">${b.kilos.toFixed(1)} kg</b>
               <div style="display: flex; gap: 4px; margin-top: 4px;">
                 <button class="btn btn-purple" style="font-size: 0.7rem; padding: 4px 6px;" onclick="abrirAjusteKilos('${b.serial}')">Pesar</button>
+                <button class="btn btn-red" style="font-size: 0.7rem; padding: 4px 6px;" onclick="abrirNoConforme('${b.serial}')">No Conforme</button>
                 <button class="btn btn-green" style="font-size: 0.7rem; padding: 4px 6px;" onclick="retornarABodega('${b.serial}')">A Bodega</button>
               </div>
             </div>
@@ -988,6 +1005,49 @@
         renderizarProduccion();
       }
       cerrarModal('modal-ajuste-kilos');
+    }
+
+    function abrirNoConforme(serial) {
+      const b = state.bultos.find(x => x.serial === serial);
+      if (!b) return;
+      document.getElementById('nc-pallet-info').innerText = `${b.serial} - ${b.nombreMaterial} (Saldo actual: ${b.kilos.toFixed(1)} kg)`;
+      document.getElementById('nc-kilos-descontar').value = "";
+      document.getElementById('nc-kilos-descontar').dataset.serial = b.serial;
+      abrirModal('modal-no-conforme');
+    }
+
+    function confirmarNoConforme() {
+      const serial = document.getElementById('nc-kilos-descontar').dataset.serial;
+      const bulto = state.bultos.find(x => x.serial === serial);
+      const descontar = parseFloat(document.getElementById('nc-kilos-descontar').value);
+      const motivo = document.getElementById('nc-motivo').value.trim() || "Contaminación / Desecho en producción";
+
+      if (!bulto || isNaN(descontar) || descontar <= 0) {
+        alert("Ingresa una cantidad válida de kilos a descontar.");
+        return;
+      }
+      if (descontar > bulto.kilos) {
+        alert(`No puedes descontar ${descontar.toFixed(1)} kg porque el pallet solo tiene ${bulto.kilos.toFixed(1)} kg.`);
+        return;
+      }
+
+      bulto.kilos = Math.max(0, bulto.kilos - descontar);
+      bulto.ajustadoEnTurno = true;
+      if (bulto.kilos === 0) bulto.estado = "Consumido";
+
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: bulto.serial,
+        nombreMaterial: bulto.nombreMaterial,
+        kilos: descontar,
+        tipo: "NO CONFORME (DESECHO)",
+        detalle: `Merma / No Conforme: -${descontar.toFixed(1)} kg (${motivo}). Saldo restante: ${bulto.kilos.toFixed(1)} kg`
+      });
+
+      guardarTodo();
+      renderizarProduccion();
+      cerrarModal('modal-no-conforme');
     }
 
     function retornarABodega(serial) {
