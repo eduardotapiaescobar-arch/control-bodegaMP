@@ -55,13 +55,16 @@
     .tab-badge { position: absolute; top: 1px; right: 20%; background: var(--purple); color: white; font-size: 0.6rem; font-weight: bold; padding: 1px 5px; border-radius: 10px; min-width: 14px; }
 
     /* Mapa de Bodega */
-    .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; }
+    .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
     .fila-col { min-width: 125px; background: rgba(0,0,0,0.05); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
+    .fila-col.rack-col { min-width: 300px; background: rgba(0, 122, 255, 0.05); border: 1.5px solid rgba(0, 122, 255, 0.3); }
     .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: #e5e5ea; border-radius: 8px; }
     .pos-box { background: white; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
+    .rack-level-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .rack-pos-cell { min-width: 125px; flex: 1; background: #f9f9fb; border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
     .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; }
     .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
-    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
 
     /* Modales */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
@@ -92,23 +95,24 @@
       <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote del Proveedor (Obligatorio)</label>
       <input type="text" id="rec-lote" placeholder="Lote..." oninput="validarFormularioCamion()">
 
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila Asignada para este Camión</label>
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila / Rack Asignado para este Camión</label>
       <select id="rec-fila"></select>
 
       <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso por Pallet (kg)</label>
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso por Código/Pallet (kg)</label>
           <input type="number" id="rec-peso" value="1200" oninput="validarFormularioCamion()">
         </div>
         <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Pallets</label>
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Códigos</label>
           <input type="number" id="rec-cantidad" value="40" oninput="validarFormularioCamion()">
         </div>
       </div>
 
       <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(2)">2 Códigos (Pallet N1)</button>
         <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(20)">20 Pallets</button>
-        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(40)">40 Pallets (Camión)</button>
+        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(40)">40 Pallets</button>
       </div>
 
       <p id="total-carga-camion" style="font-size: 0.85rem; font-weight: bold; color: var(--blue); margin-bottom: 8px;">Total carga: 48000.0 kg</p>
@@ -123,12 +127,12 @@
   <section id="view-bodega" class="view-section active">
     <div style="display: flex; gap: 6px; margin-bottom: 10px;">
       <button id="btn-modo-entrada" class="btn btn-green" style="flex: 1;" onclick="setModoOperacion('ENTRADA BODEGA')">📥 Entrada a Bodega</button>
-      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho FIFO</button>
+      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho / Picking</button>
     </div>
 
     <div id="banner-modo" class="card" style="background: rgba(52, 199, 89, 0.15); color: var(--green); border: none;">
       <strong id="banner-modo-titulo">MODO ENTRADA ACTIVO</strong>
-      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
+      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).</p>
     </div>
 
     <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
@@ -162,10 +166,10 @@
   <!-- 3. MAPA DE BODEGA -->
   <section id="view-mapa" class="view-section">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <div style="display: flex; gap: 8px; font-size: 0.7rem;">
+      <div style="display: flex; gap: 8px; font-size: 0.7rem; flex-wrap: wrap;">
         <span><b style="color: var(--orange);">⭐ Prioritario</b></span>
-        <span><b style="color: var(--purple);">● Retornados</b></span>
-        <span>2 Pallets x Pos</span>
+        <span><b style="color: var(--green);">■ N1 Picking (2 Cód/Pos)</b></span>
+        <span><b style="color: var(--blue);">■ N2+ Reserva (Encargado)</b></span>
       </div>
       <button class="btn btn-blue" style="font-size: 0.75rem; padding: 6px 10px;" onclick="compactarPosiciones()">Compactar Pasillos</button>
     </div>
@@ -226,12 +230,26 @@
   <section id="view-respaldo" class="view-section">
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 0.9rem;">Gestión de Filas / Pasillos</h4>
+        <h4 style="font-size: 0.9rem;">Gestión de Filas / Racks</h4>
         <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="toggleModoEditarFilas()">Ordenar</button>
       </div>
       <div style="display: flex; gap: 4px; margin-top: 6px;">
-        <input type="text" id="nueva-fila-nombre" placeholder="Nueva fila (Ej: Fila 9)..." style="margin: 0;">
+        <input type="text" id="nueva-fila-nombre" placeholder="Nombre (Ej: Rack 1 o Fila 9)..." style="margin: 0; flex: 1.5;">
+        <select id="nueva-fila-tipo" style="margin: 0; flex: 1;" onchange="toggleOpcionesRackNuevaFila()">
+          <option value="Piso">Piso (Apilado)</option>
+          <option value="Rack">Rack (Niveles)</option>
+        </select>
         <button class="btn btn-blue" onclick="agregarFila()">Añadir</button>
+      </div>
+      <div id="opciones-nueva-fila-rack" style="display: none; gap: 6px; margin-top: 6px; background: #f2f2f7; padding: 8px; border-radius: 8px;">
+        <div style="flex: 1;">
+          <label style="font-size: 0.72rem; color: var(--secondary-text);">Niveles de Altura (N1=Piso):</label>
+          <input type="number" id="nueva-fila-niveles" value="3" min="1" max="10" style="margin: 2px 0 0 0; padding: 6px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.72rem; color: var(--secondary-text);">Pallets lado a lado x Nivel:</label>
+          <input type="number" id="nueva-fila-posiciones" value="4" min="1" max="30" style="margin: 2px 0 0 0; padding: 6px;">
+        </div>
       </div>
       <div id="lista-filas-gestion" style="margin-top: 8px;"></div>
     </div>
@@ -266,11 +284,40 @@
     </div>
   </div>
 
+  <!-- MODAL UBICACIÓN EN RACK (ELEGIR NIVEL Y POSICIÓN AL INGRESAR O MOVER) -->
+  <div id="modal-ubicacion-rack" class="modal">
+    <div class="modal-content">
+      <h3 id="titulo-modal-rack" style="color: var(--blue);">Elegir Ubicación en Rack</h3>
+      <p id="subtitulo-modal-rack" style="font-size: 0.82rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <input type="hidden" id="rack-sel-serial">
+      <input type="hidden" id="rack-sel-modo">
+
+      <label style="font-size: 0.8rem; font-weight: bold;">Fila / Rack:</label>
+      <select id="rack-sel-fila" onchange="actualizarOpcionesNivelPosRack()"></select>
+
+      <label style="font-size: 0.8rem; font-weight: bold;">Nivel de Altura (Nivel 1 = Picking Piso, Nivel 2+ = Reserva Encargado):</label>
+      <select id="rack-sel-nivel" onchange="actualizarPosicionesDisponiblesRack()"></select>
+
+      <label style="font-size: 0.8rem; font-weight: bold;">Posición en el Nivel (Lado a Lado):</label>
+      <select id="rack-sel-posicion"></select>
+
+      <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: #1b7a34; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
+        ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> (Ej: 4 bolsas por código) para extracción directa de operadores.
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-ubicacion-rack')">Cancelar</button>
+        <button class="btn btn-blue" style="flex: 1;" onclick="confirmarUbicacionRack()">Confirmar Ubicación</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DETALLE PALLET MAPA -->
   <div id="modal-pallet-mapa" class="modal">
     <div class="modal-content">
       <div id="render-etiqueta-detalle"></div>
       <div id="render-datos-detalle" style="margin: 10px 0; font-size: 0.85rem;"></div>
+      <div id="render-acciones-rack-detalle" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
       <button class="btn btn-bordered" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa')">Cerrar</button>
     </div>
   </div>
@@ -321,10 +368,16 @@
       <label style="font-size: 0.8rem;">Tipo de Empaque:</label>
       <select id="editor-mat-empaque">
         <option value="Pallet">Pallet</option>
+        <option value="4 Bolsas (Código N1)">4 Bolsas (Código N1)</option>
         <option value="Bolsa">Bolsa</option>
         <option value="Caja">Caja</option>
         <option value="Tambor">Tambor</option>
         <option value="Contenedor">Contenedor</option>
+      </select>
+      <label style="font-size: 0.8rem;">Control FIFO:</label>
+      <select id="editor-mat-fifo">
+        <option value="true">Activado (Exigir antigüedad FIFO)</option>
+        <option value="false">Desactivado (Libre extracción)</option>
       </select>
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-editor-material')">Cancelar</button>
@@ -384,12 +437,13 @@
       contador: 100,
       modoOperacion: "ENTRADA BODEGA",
       filasBodega: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
+      configFilas: {},
       catalogo: [
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet" },
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet" },
-        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet" },
-        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet" },
-        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa" }
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet", usaFIFO: true },
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet", usaFIFO: true },
+        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true },
+        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true },
+        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa", usaFIFO: true }
       ],
       bultos: [],
       movimientos: []
@@ -399,6 +453,21 @@
     let modoEdicionFilas = false;
     let scannerActivo = null;
     let ultimoLoteGenerado = [];
+
+    // --- HELPERS DE VERSATILIDAD (RACK / PISO Y FIFO) ---
+    function getConfigFila(nombreFila) {
+      if (!state.configFilas) state.configFilas = {};
+      if (!state.configFilas[nombreFila]) {
+        state.configFilas[nombreFila] = { tipo: "Piso", niveles: 2, posicionesPorNivel: 4 };
+      }
+      return state.configFilas[nombreFila];
+    }
+
+    function materialUsaFIFO(nombreMaterial) {
+      const mat = state.catalogo.find(c => c.nombre === nombreMaterial);
+      if (!mat) return true;
+      return mat.usaFIFO !== false;
+    }
 
     // --- PERSISTENCIA ATÓMICA ---
     function guardarTodo() {
@@ -417,6 +486,12 @@
       }
       if (!state.filasBodega || state.filasBodega.length === 0) {
         state.filasBodega = ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"];
+      }
+      if (!state.configFilas) state.configFilas = {};
+      if (state.catalogo) {
+        state.catalogo.forEach(c => {
+          if (c.usaFIFO === undefined) c.usaFIFO = true;
+        });
       }
       poblarSelectores();
       renderizarBodega();
@@ -471,12 +546,21 @@
       document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
     }
 
-    // --- REGLA FIFO ---
+    // --- REGLA FIFO Y EXTRACCIÓN ---
     function compararFIFO(a, b) {
       const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
       const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
       if (fa.getTime() !== fb.getTime()) return fa - fb;
       return a.serial.localeCompare(b.serial);
+    }
+
+    function esExtraiblePorOperador(pallet) {
+      const cfg = getConfigFila(pallet.filaBodega);
+      // En Rack, los operadores sacan del Nivel 1 (a piso); Nivel 2+ es reserva para que el encargado abastezca al Nivel 1
+      if (cfg.tipo === "Rack") {
+        return pallet.nivelApilado === 1;
+      }
+      return true;
     }
 
     function obtenerListasFIFOPorComponente() {
@@ -489,11 +573,20 @@
 
       return Object.keys(agrupados).map(nombreMat => {
         const ordenados = agrupados[nombreMat].sort(compararFIFO);
+        const extraibles = ordenados.filter(esExtraiblePorOperador);
+        const enReservaAltura = ordenados.filter(b => !esExtraiblePorOperador(b));
+        const colaOperativa = [...extraibles, ...enReservaAltura];
+        const activoFIFO = materialUsaFIFO(nombreMat);
+        const prioritario = activoFIFO ? (extraibles.length > 0 ? extraibles[0] : ordenados[0]) : null;
+
         return {
           nombreMaterial: nombreMat,
           codigoMaterial: ordenados[0].codigoMaterial,
-          palletsEnStock: ordenados,
-          palletPrioritario: ordenados[0],
+          usaFIFO: activoFIFO,
+          palletsEnStock: colaOperativa,
+          palletsPickingN1: extraibles,
+          palletsReservaAltura: enReservaAltura,
+          palletPrioritario: prioritario,
           totalKilos: ordenados.reduce((a, b) => a + b.kilos, 0)
         };
       }).sort((a, b) => a.nombreMaterial.localeCompare(b.nombreMaterial));
@@ -501,23 +594,27 @@
 
     function esPalletFIFOPrioritario(serial) {
       const listas = obtenerListasFIFOPorComponente();
-      return listas.some(g => g.palletPrioritario && g.palletPrioritario.serial === serial);
+      return listas.some(g => g.usaFIFO && g.palletPrioritario && g.palletPrioritario.serial === serial);
     }
 
     // --- RECEPCIÓN CAMIÓN ---
     function poblarSelectores() {
       const selMat = document.getElementById('rec-material');
-      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg)</option>`).join('');
+      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg) ${c.usaFIFO === false ? '[Sin FIFO]' : ''}</option>`).join('');
       actualizarPlantilla();
 
       const selFila = document.getElementById('rec-fila');
       const disponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
-      selFila.innerHTML = disponibles.map(f => `<option value="${f}">${f}</option>`).join('');
+      selFila.innerHTML = disponibles.map(f => {
+        const cfg = getConfigFila(f);
+        return `<option value="${f}">${f} (${cfg.tipo === 'Rack' ? 'Rack' : 'Piso'})</option>`;
+      }).join('');
     }
 
     function actualizarPlantilla() {
       const idx = document.getElementById('rec-material').value;
       const mat = state.catalogo[idx];
+      if (!mat) return;
       document.getElementById('rec-codigo').value = mat.codigo;
       document.getElementById('rec-nombre').value = mat.nombre;
       document.getElementById('rec-peso').value = mat.pesoDefault;
@@ -570,6 +667,7 @@
           filaBodega: fila,
           posicionFila: 1,
           nivelApilado: 1,
+          subSlot: 1,
           fechaCreacion: new Date().toISOString(),
           fechaIngresoBodega: null,
           estado: "Creado",
@@ -669,8 +767,8 @@
       const banner = document.getElementById('banner-modo');
       banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
       banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
-      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO (LISTAS FIFO POR COMPONENTE)';
-      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock sellando su fecha FIFO.' : 'Cada nombre de componente tiene su lista y cola FIFO independiente.';
+      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO / PICKING OPERADORES';
+      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack los operadores extraen del Nivel 1 (Piso) y el encargado abastece desde Nivel 2+.';
 
       document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
       document.getElementById('btn-scanner-principal').innerText = esEntrada ? 'Escanear Entrada a Bodega' : 'Escanear Cualquier Pallet con Cámara';
@@ -687,43 +785,73 @@
         cont.innerHTML = `<small style="color: var(--secondary-text);">No hay componentes en stock para despachar.</small>`;
       } else {
         cont.innerHTML = componentes.map(g => `
-          <div class="card" style="border-left: 4px solid var(--orange);">
+          <div class="card" style="border-left: 4px solid ${g.usaFIFO ? 'var(--orange)' : 'var(--blue)'};">
             <div style="display: flex; justify-content: space-between;">
               <div>
                 <strong>${g.nombreMaterial}</strong><br>
-                <small style="color: var(--secondary-text); font-family: monospace;">CÓDIGO: ${g.codigoMaterial}</small>
+                <small style="color: var(--secondary-text); font-family: monospace;">CÓDIGO: ${g.codigoMaterial} • ${g.usaFIFO ? 'FIFO Activo' : 'FIFO Desactivado (Libre)'}</small>
               </div>
               <div style="text-align: right;">
-                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} pallets</b><br>
+                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} cód/pallets</b><br>
                 <small>${g.totalKilos.toFixed(0)} kg en total</small>
               </div>
             </div>
 
-            <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-size: 0.7rem; font-weight: 900; color: var(--orange);">PRIORITARIO FIFO:</span>
-                <b style="font-family: monospace; font-size: 1rem; margin-left: 4px;">${g.palletPrioritario.serial}</b>
-                <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
-                  ${g.palletPrioritario.filaBodega} (Pos ${g.palletPrioritario.posicionFila} - N${g.palletPrioritario.nivelApilado})
-                </span><br>
-                <small style="color: var(--secondary-text);">Lote: ${g.palletPrioritario.lote} • Ingreso: ${new Date(g.palletPrioritario.fechaIngresoBodega || g.palletPrioritario.fechaCreacion).toLocaleDateString()}</small><br>
-                <b style="color: var(--orange); font-size: 0.85rem;">${g.palletPrioritario.kilos.toFixed(0)} kg</b>
-              </div>
-              <button class="btn btn-orange" onclick="iniciarValidacionSalida('${g.palletPrioritario.serial}', '${g.palletPrioritario.filaBodega}', '${g.nombreMaterial}')">Validar Salida</button>
-            </div>
-
-            ${g.palletsEnStock.length > 1 ? `
-              <div style="margin-top: 6px;">
-                <small style="color: var(--secondary-text); font-size: 0.7rem;">Siguientes en cola:</small>
-                <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
-                  ${g.palletsEnStock.slice(1).map(p => `
-                    <div style="background: #f2f2f7; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
-                      <b>${p.serial}</b> ${p.filaBodega} (N${p.nivelApilado}) • ${p.kilos.toFixed(0)}k
-                    </div>
-                  `).join('')}
+            ${g.usaFIFO ? `
+              <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span style="font-size: 0.7rem; font-weight: 900; color: var(--orange);">PRIORITARIO FIFO:</span>
+                  <b style="font-family: monospace; font-size: 1rem; margin-left: 4px;">${g.palletPrioritario.serial}</b>
+                  <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
+                    ${g.palletPrioritario.filaBodega} (N${g.palletPrioritario.nivelApilado} - Pos ${g.palletPrioritario.posicionFila})
+                  </span><br>
+                  <small style="color: var(--secondary-text);">Lote: ${g.palletPrioritario.lote} • Ingreso: ${new Date(g.palletPrioritario.fechaIngresoBodega || g.palletPrioritario.fechaCreacion).toLocaleDateString()}</small><br>
+                  <b style="color: var(--orange); font-size: 0.85rem;">${g.palletPrioritario.kilos.toFixed(0)} kg</b>
                 </div>
+                <button class="btn btn-orange" onclick="iniciarValidacionSalida('${g.palletPrioritario.serial}', '${g.palletPrioritario.filaBodega}', '${g.nombreMaterial}')">Validar Salida</button>
               </div>
-            ` : ''}
+
+              ${g.palletsEnStock.length > 1 ? `
+                <div style="margin-top: 6px;">
+                  <small style="color: var(--secondary-text); font-size: 0.7rem;">Siguientes en cola:</small>
+                  <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
+                    ${g.palletsEnStock.slice(1).map(p => `
+                      <div style="background: #f2f2f7; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
+                        <b>${p.serial}</b> ${p.filaBodega} (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            ` : `
+              <div style="background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.25); border-radius: 8px; padding: 8px; margin-top: 8px;">
+                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (OPERADORES) — Libre extracción:</small>
+                <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 6px;">
+                  ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => `
+                    <div style="background: white; border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                      <div>
+                        <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
+                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k</small>
+                      </div>
+                      <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar</button>
+                    </div>
+                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin códigos en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
+                </div>
+                ${g.palletsReservaAltura.length > 0 ? `
+                  <div style="margin-top: 8px; border-top: 1px dashed rgba(0,122,255,0.3); padding-top: 6px;">
+                    <small style="color: var(--secondary-text); font-size: 0.7rem;">En Reserva Altura (Nivel 2+ Encargado): ${g.palletsReservaAltura.length} pallets</small>
+                    <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
+                      ${g.palletsReservaAltura.map(p => `
+                        <div style="background: #eef4ff; border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k</span>
+                          <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ A N1</button>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            `}
           </div>
         `).join('');
       }
@@ -740,6 +868,175 @@
       `).join('');
     }
 
+    // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO EN RACK ---
+    function abrirModalUbicacionRack(serial, modo) {
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      document.getElementById('rack-sel-serial').value = serial;
+      document.getElementById('rack-sel-modo').value = modo;
+
+      const selFila = document.getElementById('rack-sel-fila');
+      const racksDisponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
+      selFila.innerHTML = racksDisponibles.map(f => `<option value="${f}" ${f === bulto.filaBodega ? 'selected' : ''}>${f} (${getConfigFila(f).tipo})</option>`).join('');
+
+      if (modo === 'ENTRADA') {
+        document.getElementById('titulo-modal-rack').innerText = `Ubicar ${serial} en Rack`;
+        document.getElementById('subtitulo-modal-rack').innerText = `${bulto.nombreMaterial} (${bulto.kilos.toFixed(1)} kg) — Elige el Nivel y la Posición:`;
+      } else if (modo === 'ABASTECER_N1') {
+        document.getElementById('titulo-modal-rack').innerText = `⬇️ Abastecer a Nivel 1 (Picking)`;
+        document.getElementById('subtitulo-modal-rack').innerText = `Bajar ${serial} desde Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) hacia una posición del Nivel 1 (A Piso):`;
+      } else {
+        document.getElementById('titulo-modal-rack').innerText = `Mover Ubicación de ${serial}`;
+        document.getElementById('subtitulo-modal-rack').innerText = `Selecciona el nuevo Nivel y Posición dentro del Rack:`;
+      }
+
+      actualizarOpcionesNivelPosRack();
+      abrirModal('modal-ubicacion-rack');
+    }
+
+    function actualizarOpcionesNivelPosRack() {
+      const fila = document.getElementById('rack-sel-fila').value;
+      const modo = document.getElementById('rack-sel-modo').value;
+      const cfg = getConfigFila(fila);
+      const maxNiveles = cfg.tipo === 'Rack' ? (parseInt(cfg.niveles) || 3) : 2;
+
+      const selNivel = document.getElementById('rack-sel-nivel');
+      let opcionesNiv = "";
+
+      if (modo === 'ABASTECER_N1') {
+        opcionesNiv = `<option value="1" selected>Nivel 1 (A Piso - Picking Operadores - 2 Cód/Pos)</option>`;
+      } else {
+        for (let n = 1; n <= maxNiveles; n++) {
+          const desc = (cfg.tipo === 'Rack')
+            ? (n === 1 ? 'Nivel 1 (A Piso - Picking 2 Cód/Pos)' : `Nivel ${n} (Altura - Reserva Encargado)`)
+            : (n === 1 ? 'Nivel 1 (Piso)' : 'Nivel 2 (Arriba)');
+          opcionesNiv += `<option value="${n}">${desc}</option>`;
+        }
+      }
+      selNivel.innerHTML = opcionesNiv;
+      actualizarPosicionesDisponiblesRack();
+    }
+
+    function actualizarPosicionesDisponiblesRack() {
+      const fila = document.getElementById('rack-sel-fila').value;
+      const nivel = parseInt(document.getElementById('rack-sel-nivel').value) || 1;
+      const serialActual = document.getElementById('rack-sel-serial').value;
+      const cfg = getConfigFila(fila);
+      const maxPos = Math.max(1, parseInt(cfg.posicionesPorNivel) || 4);
+
+      document.getElementById('info-slot-nivel1').style.display = (cfg.tipo === 'Rack' && nivel === 1) ? 'block' : 'none';
+
+      const enFilaNivel = state.bultos.filter(b =>
+        b.filaBodega === fila &&
+        b.estado === 'En Stock' &&
+        b.nivelApilado === nivel &&
+        b.serial !== serialActual
+      );
+
+      // Capacidad por posición: En Rack Nivel 1 caben 2 códigos por posición; en Nivel 2+ cabe 1 pallet por posición
+      const capacidadPorPosicion = (cfg.tipo === 'Rack' && nivel === 1) ? 2 : 1;
+
+      const selPos = document.getElementById('rack-sel-posicion');
+      let htmlPos = "";
+      let primeraLibreElegida = false;
+
+      for (let p = 1; p <= maxPos; p++) {
+        const ocupantes = enFilaNivel.filter(b => b.posicionFila === p);
+        const cant = ocupantes.length;
+        const libre = cant < capacidadPorPosicion;
+        const nombresOcupantes = ocupantes.map(o => o.serial).join(' + ');
+
+        let estadoTexto = "";
+        if (capacidadPorPosicion === 2) {
+          estadoTexto = `(${cant}/2 códigos ocupados${cant > 0 ? ': ' + nombresOcupantes : ' - Libre'})`;
+        } else {
+          estadoTexto = cant === 0 ? '(Libre)' : `(Ocupado por ${nombresOcupantes})`;
+        }
+
+        const selectedAttr = (libre && !primeraLibreElegida) ? 'selected' : '';
+        if (libre && !primeraLibreElegida) primeraLibreElegida = true;
+
+        htmlPos += `<option value="${p}" ${selectedAttr}>Posición ${p} ${estadoTexto}</option>`;
+      }
+      selPos.innerHTML = htmlPos;
+    }
+
+    function confirmarUbicacionRack() {
+      const serial = document.getElementById('rack-sel-serial').value;
+      const modo = document.getElementById('rack-sel-modo').value;
+      const filaDestino = document.getElementById('rack-sel-fila').value;
+      const nivelDestino = parseInt(document.getElementById('rack-sel-nivel').value) || 1;
+      const posDestino = parseInt(document.getElementById('rack-sel-posicion').value) || 1;
+
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      const cfg = getConfigFila(filaDestino);
+      const capacidadMax = (cfg.tipo === 'Rack' && nivelDestino === 1) ? 2 : 1;
+      const ocupantes = state.bultos.filter(b =>
+        b.filaBodega === filaDestino &&
+        b.estado === 'En Stock' &&
+        b.nivelApilado === nivelDestino &&
+        b.posicionFila === posDestino &&
+        b.serial !== serial
+      );
+
+      if (ocupantes.length >= capacidadMax) {
+        if (!confirm(`⚠️ La Posición ${posDestino} del Nivel ${nivelDestino} ya tiene ${ocupantes.length}/${capacidadMax} código(s) (${ocupantes.map(x => x.serial).join(', ')}).\n¿Deseas asignarlo ahí de todas formas?`)) {
+          return;
+        }
+      }
+
+      const ubicacionAnterior = `${bulto.filaBodega} (N${bulto.nivelApilado}-Pos ${bulto.posicionFila})`;
+      bulto.filaBodega = filaDestino;
+      bulto.nivelApilado = nivelDestino;
+      bulto.posicionFila = posDestino;
+      bulto.subSlot = ocupantes.length + 1;
+
+      if (modo === 'ENTRADA') {
+        bulto.estado = "En Stock";
+        bulto.fechaIngresoBodega = new Date().toISOString();
+
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: bulto.kilos,
+          tipo: "ENTRADA BODEGA (RACK)",
+          detalle: `Ingreso a ${bulto.filaBodega} -> Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila} (${bulto.nivelApilado === 1 ? 'Picking Piso' : 'Reserva Altura'}) (+ ${bulto.kilos.toFixed(1)} kg)`
+        });
+      } else if (modo === 'ABASTECER_N1') {
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: bulto.kilos,
+          tipo: "ABASTECIMIENTO ENCARGADO (N2+ ➔ N1)",
+          detalle: `Abastecido por encargado desde ${ubicacionAnterior} hacia Nivel 1 Picking (Pos ${bulto.posicionFila})`
+        });
+      } else {
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: bulto.serial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: bulto.kilos,
+          tipo: "REUBICACIÓN EN RACK",
+          detalle: `Movido desde ${ubicacionAnterior} hacia ${bulto.filaBodega} (Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila})`
+        });
+      }
+
+      guardarTodo();
+      cerrarModal('modal-ubicacion-rack');
+      cerrarModal('modal-pallet-mapa');
+      renderizarBodega();
+      renderizarMapa();
+      alert(`Ubicación confirmada: ${bulto.serial} en ${bulto.filaBodega} — Nivel ${bulto.nivelApilado}, Posición ${bulto.posicionFila}`);
+    }
+
     function procesarEscaneoBodega(serial, forzarSinFIFO = false) {
       const idx = state.bultos.findIndex(b => b.serial === serial);
       if (idx === -1) { alert(`El código '${serial}' no existe en la base de datos.`); return; }
@@ -748,6 +1045,13 @@
 
       if (state.modoOperacion === "ENTRADA BODEGA") {
         if (bulto.estado === "En Stock") { alert(`¡Alerta! El bulto ${bulto.serial} ya está EN STOCK en bodega.`); return; }
+
+        const cfg = getConfigFila(bulto.filaBodega);
+        if (cfg.tipo === "Rack") {
+          // Si va a un Rack, abrir modal para elegir Nivel y Posición
+          abrirModalUbicacionRack(bulto.serial, "ENTRADA");
+          return;
+        }
 
         bulto.estado = "En Stock";
         bulto.fechaIngresoBodega = new Date().toISOString();
@@ -773,11 +1077,19 @@
         if (bulto.estado === "Consumido") { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
         if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
 
-        if (!forzarSinFIFO) {
+        const cfg = getConfigFila(bulto.filaBodega);
+        if (cfg.tipo === "Rack" && bulto.nivelApilado > 1 && !forzarSinFIFO) {
+          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen del Nivel 1 (A Piso) y el encargado abastece bajando pallets desde el Nivel 2+.\n\n¿Deseas que el encargado lo baje primero a Nivel 1 desde el Mapa, o forzar la salida directa a Planta?`;
+          if (!confirm(msgAltura)) return;
+        }
+
+        const usaFIFO = materialUsaFIFO(bulto.nombreMaterial);
+
+        if (usaFIFO && !forzarSinFIFO) {
           const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock').sort(compararFIFO);
           if (mismoMaterial.length > 0 && mismoMaterial[0].serial !== bulto.serial) {
             const masAntiguo = mismoMaterial[0];
-            const msg = `⚠️ Advertencia de Quiebre FIFO\n\nPara '${bulto.nombreMaterial}', el pallet prioritario está en [${masAntiguo.filaBodega}] Posición ${masAntiguo.posicionFila} (Nivel ${masAntiguo.nivelApilado}): ${masAntiguo.serial} (Lote: ${masAntiguo.lote}).\n\n¿Deseas forzar el despacho fuera de regla?`;
+            const msg = `⚠️ Advertencia de Quiebre FIFO\n\nPara '${bulto.nombreMaterial}', el pallet prioritario está en [${masAntiguo.filaBodega}] Nivel ${masAntiguo.nivelApilado} - Posición ${masAntiguo.posicionFila}: ${masAntiguo.serial} (Lote: ${masAntiguo.lote}).\n\n¿Deseas forzar el despacho fuera de regla?`;
             if (confirm(msg)) {
               procesarEscaneoBodega(serial, true);
             }
@@ -794,8 +1106,8 @@
           serialBulto: bulto.serial,
           nombreMaterial: bulto.nombreMaterial,
           kilos: bulto.kilos,
-          tipo: "DESPACHO PRODUCCIÓN (FIFO)",
-          detalle: `Despacho FIFO desde ${bulto.filaBodega} (Pos ${bulto.posicionFila}) a Producción (${bulto.kilos.toFixed(1)} kg)`
+          tipo: usaFIFO ? "DESPACHO PRODUCCIÓN (FIFO)" : "PICKING PRODUCCIÓN (SIN FIFO)",
+          detalle: `Salida desde ${bulto.filaBodega} (Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila}) a Producción (${bulto.kilos.toFixed(1)} kg)`
         });
       }
 
@@ -820,8 +1132,82 @@
 
       cont.innerHTML = todas.map(fila => {
         const esRet = (fila === nombreFilaRetornados);
+        const cfg = getConfigFila(fila);
         const palletsFila = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
 
+        if (!esRet && cfg.tipo === "Rack") {
+          const maxNivelRack = Math.max(
+            parseInt(cfg.niveles) || 3,
+            palletsFila.reduce((m, b) => Math.max(m, b.nivelApilado), 0)
+          );
+          const posPorNivel = Math.max(
+            parseInt(cfg.posicionesPorNivel) || 4,
+            palletsFila.reduce((m, b) => Math.max(m, b.posicionFila), 0)
+          );
+
+          let nivelesHtml = "";
+          // Nivel 1 abajo (a piso) y niveles superiores hacia arriba
+          for (let n = maxNivelRack; n >= 1; n--) {
+            let celdasPosHtml = "";
+            for (let p = 1; p <= posPorNivel; p++) {
+              const palletsEnPos = palletsFila.filter(b => b.nivelApilado === n && b.posicionFila === p);
+
+              if (n === 1) {
+                // Nivel 1: 2 códigos por posición (Picking Operadores)
+                const codA = palletsEnPos[0] || null;
+                const codB = palletsEnPos[1] || null;
+                celdasPosHtml += `
+                  <div class="rack-pos-cell" style="border-color: rgba(52, 199, 89, 0.45); background: rgba(52, 199, 89, 0.04);">
+                    <small style="font-size: 0.65rem; font-weight: bold; color: #1b7a34; display: flex; justify-content: space-between;">
+                      <span>Pos ${p}</span><span>(${palletsEnPos.length}/2 Cód)</span>
+                    </small>
+                    ${renderSlot(codA, 'Cód 1 (4 Bolsas)', false)}
+                    ${renderSlot(codB, 'Cód 2 (4 Bolsas)', false)}
+                  </div>
+                `;
+              } else {
+                // Nivel 2+: Reserva Encargado (1 pallet por posición, con botón rápido para bajar a Nivel 1)
+                const palletRes = palletsEnPos[0] || null;
+                celdasPosHtml += `
+                  <div class="rack-pos-cell">
+                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--secondary-text); display: flex; justify-content: space-between;">
+                      <span>Pos ${p}</span><span>Reserva</span>
+                    </small>
+                    ${renderSlot(palletRes, `Vacío (Pos ${p})`, false)}
+                    ${palletRes ? `
+                      <button class="btn btn-blue" style="font-size: 0.65rem; padding: 3px 6px; width: 100%;" onclick="abrirModalUbicacionRack('${palletRes.serial}', 'ABASTECER_N1')">
+                        ⬇️ Bajar a N1
+                      </button>
+                    ` : ''}
+                  </div>
+                `;
+              }
+            }
+
+            nivelesHtml += `
+              <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
+                <small style="font-size: 0.7rem; color: ${n === 1 ? '#1b7a34' : 'var(--blue)'}; font-weight: bold;">
+                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking Operadores: 2 Códigos x Pos)' : `🔵 Nivel ${n} (Altura — Reserva Encargado)`}
+                </small>
+                <div class="rack-level-row">
+                  ${celdasPosHtml}
+                </div>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="fila-col rack-col">
+              <div class="fila-header" style="background: rgba(0, 122, 255, 0.15); color: var(--blue);">
+                🗄️ ${fila} (RACK)<br>
+                <small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} cód/pallets • ${maxNivelRack} Niveles x ${posPorNivel} Pos</small>
+              </div>
+              ${nivelesHtml}
+            </div>
+          `;
+        }
+
+        // MODO PISO TRADICIONAL
         const agrupados = {};
         palletsFila.forEach(b => {
           if (!agrupados[b.posicionFila]) agrupados[b.posicionFila] = [];
@@ -876,10 +1262,14 @@
     }
 
     function compactarPosiciones() {
-      if (!confirm("¿Deseas compactar pasillos? Se eliminarán posiciones vacías corriendo los pallets hacia el frente.")) return;
+      if (!confirm("¿Deseas compactar pasillos? En las filas de piso se eliminarán posiciones vacías corriendo los pallets hacia el frente.")) return;
 
       const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
       todas.forEach(fila => {
+        const cfg = getConfigFila(fila);
+        // En Rack se respetan las posiciones elegidas manualmente y el flujo de abastecimiento N2+ -> N1
+        if (fila !== nombreFilaRetornados && cfg.tipo === "Rack") return;
+
         const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock')
           .sort((a, b) => (a.posicionFila - b.posicionFila) || (a.nivelApilado - b.nivelApilado));
 
@@ -905,12 +1295,12 @@
         nombreMaterial: "Reordenamiento",
         kilos: 0,
         tipo: "COMPACTACIÓN DE POSICIONES",
-        detalle: "Se compactaron posiciones vacías corriendo pallets hacia el frente."
+        detalle: "Se compactaron posiciones vacías en pasillos."
       });
 
       guardarTodo();
       renderizarMapa();
-      alert("¡Bodega compactada! Se eliminaron los espacios vacíos.");
+      alert("¡Pasillos compactados!");
     }
 
     function verDetallePallet(serial) {
@@ -928,17 +1318,35 @@
       `;
       JsBarcode(`#svg-det-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
 
+      const cfg = getConfigFila(b.filaBodega);
+      const usaFIFO = materialUsaFIFO(b.nombreMaterial);
+
       document.getElementById('render-datos-detalle').innerHTML = `
         <div class="card" style="margin: 0; font-size: 0.8rem;">
-          <p><b>Sector / Fila:</b> ${b.filaBodega}</p>
-          <p><b>Posición en Pasillo:</b> Posición ${b.posicionFila}</p>
-          <p><b>Nivel de Apilamiento:</b> ${b.nivelApilado === 1 ? 'Nivel 1 (Piso / Base)' : 'Nivel 2 (Superior / Arriba)'}</p>
-          <p><b>Regla FIFO:</b> ${esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera'}</p>
+          <p><b>Sector / Fila:</b> ${b.filaBodega} (${cfg.tipo})</p>
+          <p><b>Nivel:</b> Nivel ${b.nivelApilado} ${b.nivelApilado === 1 ? '(Piso / Picking Operadores)' : '(Altura / Reserva Encargado)'}</p>
+          <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
+          <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
           <hr style="margin: 6px 0;">
-          <p><b>Kilos:</b> ${b.kilos.toFixed(1)} kg</p>
+          <p><b>Kilos:</b> ${b.kilos.toFixed(1)} kg (${b.tipoEmpaque})</p>
           <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
         </div>
       `;
+
+      const contAcciones = document.getElementById('render-acciones-rack-detalle');
+      if (cfg.tipo === "Rack") {
+        let btns = "";
+        if (b.nivelApilado > 1) {
+          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar a Nivel 1 (Abastecer Picking Operadores)</button>`;
+        } else {
+          btns += `<button class="btn btn-orange" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); procesarEscaneoBodega('${b.serial}');">📤 Extraer a Producción (Picking Operador)</button>`;
+        }
+        btns += `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Nivel / Posición en Rack</button>`;
+        contAcciones.innerHTML = btns;
+      } else {
+        contAcciones.innerHTML = `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Ubicación</button>`;
+      }
+
       abrirModal('modal-pallet-mapa');
     }
 
@@ -1133,7 +1541,7 @@
             ${lista.map(b => `
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 4px 0;">
                 <div>
-                  <b>${b.serial}</b> <span style="font-size: 0.7rem; color: var(--secondary-text);">(${b.filaBodega})</span><br>
+                  <b>${b.serial}</b> <span style="font-size: 0.7rem; color: var(--secondary-text);">(${b.filaBodega} N${b.nivelApilado}-P${b.posicionFila})</span><br>
                   <small>${b.nombreMaterial} • Lote: ${b.lote}</small>
                 </div>
                 <b>${b.kilos.toFixed(1)} kg</b>
@@ -1185,18 +1593,58 @@
     }
 
     // --- GESTIÓN DE FILAS Y CATÁLOGO ---
+    function toggleOpcionesRackNuevaFila() {
+      const tipo = document.getElementById('nueva-fila-tipo').value;
+      document.getElementById('opciones-nueva-fila-rack').style.display = (tipo === 'Rack') ? 'flex' : 'none';
+    }
+
+    function cambiarTipoFilaExistente(nombreFila) {
+      const cfg = getConfigFila(nombreFila);
+      if (cfg.tipo === 'Piso') {
+        const niv = parseInt(prompt(`Configurar '${nombreFila}' como RACK.\n¿Cuántos niveles de altura tiene? (Nivel 1 = A piso con 2 códigos/pos):`, cfg.niveles || 3));
+        if (isNaN(niv) || niv < 1) return;
+        const pos = parseInt(prompt(`¿Cuántos pallets caben uno al lado del otro por cada nivel en '${nombreFila}'?:`, cfg.posicionesPorNivel || 4));
+        if (isNaN(pos) || pos < 1) return;
+        cfg.tipo = 'Rack';
+        cfg.niveles = niv;
+        cfg.posicionesPorNivel = pos;
+      } else {
+        cfg.tipo = 'Piso';
+        cfg.niveles = 2;
+      }
+      guardarTodo();
+      poblarSelectores();
+      renderizarGestionFilas();
+      renderizarMapa();
+    }
+
+    function toggleFIFOMaterialRapido(id) {
+      const m = state.catalogo.find(x => x.id === id);
+      if (!m) return;
+      m.usaFIFO = (m.usaFIFO === false) ? true : false;
+      guardarTodo();
+      poblarSelectores();
+      renderizarGestionFilas();
+      renderizarBodega();
+    }
+
     function renderizarGestionFilas() {
       const cont = document.getElementById('lista-filas-gestion');
       cont.innerHTML = state.filasBodega.map((f, i) => {
         const count = state.bultos.filter(b => b.filaBodega === f && b.estado === 'En Stock').length;
+        const cfg = getConfigFila(f);
         return `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
             <div>
               ${modoEdicionFilas ? `<button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, -1)">▲</button> <button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, 1)">▼</button>` : ''}
               <b>${f}</b>
+              <span style="font-size: 0.68rem; background: ${cfg.tipo === 'Rack' ? 'rgba(0,122,255,0.15)' : '#e5e5ea'}; color: ${cfg.tipo === 'Rack' ? 'var(--blue)' : 'black'}; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
+                ${cfg.tipo === 'Rack' ? `Rack (${cfg.niveles}N x ${cfg.posicionesPorNivel}P)` : 'Piso (2 Niv)'}
+              </span>
             </div>
-            <div>
-              <small style="color: var(--secondary-text); margin-right: 8px;">${count} pallets</small>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <small style="color: var(--secondary-text); margin-right: 4px;">${count} cód</small>
+              <button class="btn btn-bordered" style="font-size: 0.68rem; padding: 3px 6px;" onclick="cambiarTipoFilaExistente('${f}')">${cfg.tipo === 'Rack' ? 'A Piso' : 'A Rack'}</button>
               <button class="btn btn-red" style="font-size: 0.7rem; padding: 3px 6px;" onclick="eliminarFila('${f}')">✕</button>
             </div>
           </div>
@@ -1204,15 +1652,23 @@
       }).join('');
 
       const catCont = document.getElementById('lista-catalogo-gestion');
-      catCont.innerHTML = state.catalogo.map(c => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
-          <div>
-            <b>${c.nombre}</b><br>
-            <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
+      catCont.innerHTML = state.catalogo.map(c => {
+        const fifoOn = c.usaFIFO !== false;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
+            <div>
+              <b>${c.nombre}</b><br>
+              <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button class="btn ${fifoOn ? 'btn-orange' : 'btn-bordered'}" style="font-size: 0.68rem; padding: 4px 8px;" onclick="toggleFIFOMaterialRapido('${c.id}')">
+                ${fifoOn ? 'FIFO: ON' : 'FIFO: OFF'}
+              </button>
+              <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
+            </div>
           </div>
-          <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function toggleModoEditarFilas() {
@@ -1223,10 +1679,20 @@
     function agregarFila() {
       const input = document.getElementById('nueva-fila-nombre');
       const nombre = input.value.trim();
+      const tipo = document.getElementById('nueva-fila-tipo').value;
+      const niveles = parseInt(document.getElementById('nueva-fila-niveles').value) || 3;
+      const posiciones = parseInt(document.getElementById('nueva-fila-posiciones').value) || 4;
+
       if (!nombre) return;
       if (nombre.toLowerCase() === nombreFilaRetornados.toLowerCase()) { alert(`El nombre '${nombreFilaRetornados}' está reservado.`); return; }
       if (!state.filasBodega.includes(nombre)) {
         state.filasBodega.push(nombre);
+        if (!state.configFilas) state.configFilas = {};
+        state.configFilas[nombre] = {
+          tipo: tipo,
+          niveles: tipo === 'Rack' ? Math.max(1, niveles) : 2,
+          posicionesPorNivel: tipo === 'Rack' ? Math.max(1, posiciones) : 4
+        };
         guardarTodo();
         poblarSelectores();
         renderizarGestionFilas();
@@ -1240,6 +1706,7 @@
       const count = state.bultos.filter(b => b.filaBodega === nombre && b.estado === 'En Stock').length;
       if (count > 0) { alert(`No se puede eliminar '${nombre}' porque contiene ${count} pallets en stock.`); return; }
       state.filasBodega = state.filasBodega.filter(f => f !== nombre);
+      if (state.configFilas && state.configFilas[nombre]) delete state.configFilas[nombre];
       guardarTodo();
       poblarSelectores();
       renderizarGestionFilas();
@@ -1265,6 +1732,7 @@
         document.getElementById('editor-mat-nombre').value = m.nombre;
         document.getElementById('editor-mat-peso').value = m.pesoDefault;
         document.getElementById('editor-mat-empaque').value = m.tipoEmpaque;
+        document.getElementById('editor-mat-fifo').value = (m.usaFIFO !== false) ? "true" : "false";
         document.getElementById('btn-eliminar-material').style.display = "block";
       } else {
         document.getElementById('editor-mat-titulo').innerText = "Nuevo Material";
@@ -1272,6 +1740,7 @@
         document.getElementById('editor-mat-nombre').value = "";
         document.getElementById('editor-mat-peso').value = 1200;
         document.getElementById('editor-mat-empaque').value = "Pallet";
+        document.getElementById('editor-mat-fifo').value = "true";
         document.getElementById('btn-eliminar-material').style.display = "none";
       }
       abrirModal('modal-editor-material');
@@ -1283,14 +1752,15 @@
       const nombre = document.getElementById('editor-mat-nombre').value.trim();
       const peso = parseFloat(document.getElementById('editor-mat-peso').value);
       const empaque = document.getElementById('editor-mat-empaque').value;
+      const usaFIFO = document.getElementById('editor-mat-fifo').value === "true";
 
       if (!codigo || !nombre || isNaN(peso)) return;
 
       if (id) {
         const m = state.catalogo.find(x => x.id === id);
-        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.tipoEmpaque = empaque;
+        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.tipoEmpaque = empaque; m.usaFIFO = usaFIFO;
       } else {
-        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, tipoEmpaque: empaque });
+        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, tipoEmpaque: empaque, usaFIFO });
       }
       guardarTodo();
       poblarSelectores();
@@ -1397,6 +1867,10 @@
       reader.onload = function(evt) {
         try {
           state = JSON.parse(evt.target.result);
+          if (!state.configFilas) state.configFilas = {};
+          if (state.catalogo) {
+            state.catalogo.forEach(c => { if (c.usaFIFO === undefined) c.usaFIFO = true; });
+          }
           guardarTodo();
           poblarSelectores();
           renderizarBodega();
