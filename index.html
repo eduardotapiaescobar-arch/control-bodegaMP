@@ -100,17 +100,28 @@
 
       <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso por Código/Pallet (kg)</label>
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Bolsas / Bultos x Pallet</label>
+          <input type="number" id="rec-bolsas-pallet" value="1" min="1" oninput="calcularPesoDesdeBolsasRec()">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso x Bolsa (kg)</label>
+          <input type="number" id="rec-peso-bolsa" value="1200" oninput="calcularPesoDesdeBolsasRec()">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso Total Pallet (kg)</label>
           <input type="number" id="rec-peso" value="1200" oninput="validarFormularioCamion()">
         </div>
         <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Códigos</label>
+          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Pallets</label>
           <input type="number" id="rec-cantidad" value="40" oninput="validarFormularioCamion()">
         </div>
       </div>
 
       <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(2)">2 Códigos (Pallet N1)</button>
+        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(2)">2 Pallets</button>
         <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(20)">20 Pallets</button>
         <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(40)">40 Pallets</button>
       </div>
@@ -333,7 +344,7 @@
       <div id="bloque-abastecer-porcionado" style="display: none; background: #f2f2f7; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
         <label style="font-size: 0.8rem; font-weight: bold; color: var(--blue);">Modalidad de Bajada a Nivel 1:</label>
         <select id="abast-modalidad" onchange="toggleModalidadAbastecimiento()" style="margin-bottom: 8px;">
-          <option value="PORCIONADO">Porcionar por Bolsas (Bajar 1, 2, 3 o 4 bolsas)</option>
+          <option value="PORCIONADO">Porcionar por Bolsas (Bajar bolsas)</option>
           <option value="COMPLETO">Bajar el Pallet Completo</option>
         </select>
 
@@ -373,7 +384,7 @@
       <select id="rack-sel-posicion" onchange="actualizarOpcionesDestinoPorcionado()"></select>
 
       <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: #1b7a34; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
-        ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> (Ej: 4 bolsas por código) para extracción directa de operadores.
+        ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> para extracción directa de operadores.
       </div>
 
       <div style="display: flex; gap: 8px;">
@@ -434,12 +445,25 @@
       <input type="text" id="editor-mat-codigo">
       <label style="font-size: 0.8rem;">Nombre:</label>
       <input type="text" id="editor-mat-nombre">
-      <label style="font-size: 0.8rem;">Peso estándar (kg):</label>
-      <input type="number" id="editor-mat-peso">
+
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem;">Bolsas x Pallet:</label>
+          <input type="number" id="editor-mat-bolsas" value="25" min="1" oninput="calcularPesoDesdeBolsasEditor()">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.8rem;">Peso x Bolsa (kg):</label>
+          <input type="number" id="editor-mat-peso-bolsa" value="15" min="0.1" step="any" oninput="calcularPesoDesdeBolsasEditor()">
+        </div>
+      </div>
+
+      <label style="font-size: 0.8rem;">Peso estándar total por Pallet (kg):</label>
+      <input type="number" id="editor-mat-peso" value="375">
+
       <label style="font-size: 0.8rem;">Tipo de Empaque:</label>
       <select id="editor-mat-empaque">
         <option value="Pallet">Pallet</option>
-        <option value="4 Bolsas (Código N1)">4 Bolsas (Código N1)</option>
+        <option value="Bolsas en Pallet">Bolsas en Pallet</option>
         <option value="Bolsa">Bolsa</option>
         <option value="Caja">Caja</option>
         <option value="Tambor">Tambor</option>
@@ -510,11 +534,11 @@
       filasBodega: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
       configFilas: {},
       catalogo: [
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet", usaFIFO: true },
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet", usaFIFO: true },
-        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true },
-        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true },
-        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa", usaFIFO: true }
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 1200 },
+        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 850 },
+        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 30, pesoBolsaDefault: 25 },
+        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 30, pesoBolsaDefault: 25 },
+        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 25 }
       ],
       bultos: [],
       movimientos: []
@@ -540,6 +564,10 @@
       return mat.usaFIFO !== false;
     }
 
+    function obtenerMaterialPorNombre(nombreMaterial) {
+      return state.catalogo.find(c => c.nombre === nombreMaterial) || null;
+    }
+
     // --- PERSISTENCIA ATÓMICA ---
     function guardarTodo() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -562,6 +590,16 @@
       if (state.catalogo) {
         state.catalogo.forEach(c => {
           if (c.usaFIFO === undefined) c.usaFIFO = true;
+          if (!c.bolsasPorPallet) c.bolsasPorPallet = Math.max(1, Math.round(c.pesoDefault / 25)) || 1;
+          if (!c.pesoBolsaDefault) c.pesoBolsaDefault = (c.pesoDefault / c.bolsasPorPallet) || 25;
+        });
+      }
+      if (state.bultos) {
+        state.bultos.forEach(b => {
+          if (!b.pesoBolsa) {
+            const m = obtenerMaterialPorNombre(b.nombreMaterial);
+            b.pesoBolsa = m ? m.pesoBolsaDefault : 25;
+          }
         });
       }
       poblarSelectores();
@@ -670,7 +708,7 @@
     // --- RECEPCIÓN CAMIÓN ---
     function poblarSelectores() {
       const selMat = document.getElementById('rec-material');
-      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg) ${c.usaFIFO === false ? '[Sin FIFO]' : ''}</option>`).join('');
+      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.bolsasPorPallet || 1} bls x ${c.pesoBolsaDefault || c.pesoDefault}kg = ${c.pesoDefault}kg) ${c.usaFIFO === false ? '[Sin FIFO]' : ''}</option>`).join('');
       actualizarPlantilla();
 
       const selFila = document.getElementById('rec-fila');
@@ -687,7 +725,18 @@
       if (!mat) return;
       document.getElementById('rec-codigo').value = mat.codigo;
       document.getElementById('rec-nombre').value = mat.nombre;
+      document.getElementById('rec-bolsas-pallet').value = mat.bolsasPorPallet || 1;
+      document.getElementById('rec-peso-bolsa').value = mat.pesoBolsaDefault || mat.pesoDefault;
       document.getElementById('rec-peso').value = mat.pesoDefault;
+      validarFormularioCamion();
+    }
+
+    function calcularPesoDesdeBolsasRec() {
+      const bls = parseFloat(document.getElementById('rec-bolsas-pallet').value) || 0;
+      const pBolsa = parseFloat(document.getElementById('rec-peso-bolsa').value) || 0;
+      if (bls > 0 && pBolsa > 0) {
+        document.getElementById('rec-peso').value = (bls * pBolsa).toFixed(1);
+      }
       validarFormularioCamion();
     }
 
@@ -720,6 +769,8 @@
       const fila = document.getElementById('rec-fila').value;
       const peso = parseFloat(document.getElementById('rec-peso').value);
       const cantidad = parseInt(document.getElementById('rec-cantidad').value);
+      const bolsasPallet = parseInt(document.getElementById('rec-bolsas-pallet').value) || (mat.bolsasPorPallet || 1);
+      const pesoBolsa = parseFloat(document.getElementById('rec-peso-bolsa').value) || (mat.pesoBolsaDefault || 25);
 
       const nuevos = [];
       for (let i = 0; i < cantidad; i++) {
@@ -732,7 +783,9 @@
           nombreMaterial: mat.nombre,
           kilos: peso,
           kilosIniciales: peso,
-          tipoEmpaque: mat.tipoEmpaque,
+          bolsasPorPallet: bolsasPallet,
+          pesoBolsa: pesoBolsa,
+          tipoEmpaque: `${bolsasPallet} bls x ${pesoBolsa}kg`,
           lote: lote,
           filaBodega: fila,
           posicionFila: 1,
@@ -762,7 +815,7 @@
           <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
           <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 2px;">${b.serial}</p>
           <div style="display: flex; justify-content: space-between; border-top: 1px solid black; padding-top: 6px; font-weight: bold;">
-            <small>${b.tipoEmpaque.toUpperCase()}<br>[${b.filaBodega}]</small>
+            <small>${b.tipoEmpaque ? b.tipoEmpaque.toUpperCase() : 'PALLET'}<br>[${b.filaBodega}]</small>
             <span style="font-size: 1.2rem;">${b.kilos.toFixed(1)} kg</span>
           </div>
         </div>
@@ -815,7 +868,7 @@
         doc.rect(4, 62, 54, 28);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8);
-        doc.text(b.tipoEmpaque.toUpperCase(), 8, 72);
+        doc.text(b.tipoEmpaque ? b.tipoEmpaque.toUpperCase() : 'PALLET', 8, 72);
         doc.setFontSize(7.5);
         doc.text(`[${b.filaBodega}]`, 8, 80);
 
@@ -897,26 +950,32 @@
               <div style="background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.25); border-radius: 8px; padding: 8px; margin-top: 8px;">
                 <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (OPERADORES) — Retiro por Bolsas:</small>
                 <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 6px;">
-                  ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => `
+                  ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => {
+                    const pBolsa = p.pesoBolsa || 25;
+                    const bls = Math.round(p.kilos / pBolsa);
+                    return `
                     <div style="background: white; border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                       <div>
                         <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
-                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${Math.round(p.kilos/25)} bls)</small>
+                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</small>
                       </div>
                       <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar Bolsas</button>
                     </div>
-                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin bolsas disponibles en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
+                  `; }).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin bolsas disponibles en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
                 </div>
                 ${g.palletsReservaAltura.length > 0 ? `
                   <div style="margin-top: 8px; border-top: 1px dashed rgba(0,122,255,0.3); padding-top: 6px;">
                     <small style="color: var(--secondary-text); font-size: 0.7rem;">En Reserva Altura (Nivel 2+ Encargado): ${g.palletsReservaAltura.length} pallets</small>
                     <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
-                      ${g.palletsReservaAltura.map(p => `
+                      ${g.palletsReservaAltura.map(p => {
+                        const pBolsa = p.pesoBolsa || 25;
+                        const bls = Math.floor(p.kilos / pBolsa);
+                        return `
                         <div style="background: #eef4ff; border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k (${Math.floor(p.kilos/25)} bls)</span>
+                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</span>
                           <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas a N1</button>
                         </div>
-                      `).join('')}
+                      `; }).join('')}
                     </div>
                   </div>
                 ` : ''}
@@ -943,13 +1002,14 @@
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
 
+      const pBolsa = bulto.pesoBolsa || (obtenerMaterialPorNombre(bulto.nombreMaterial)?.pesoBolsaDefault) || 25;
       document.getElementById('consumo-n1-serial').value = serial;
-      document.getElementById('consumo-n1-peso-bolsa').value = 25;
-      const bolsasTotales = Math.max(1, Math.floor(bulto.kilos / 25));
+      document.getElementById('consumo-n1-peso-bolsa').value = pBolsa;
+      const bolsasTotales = Math.max(1, Math.floor(bulto.kilos / pBolsa));
       document.getElementById('consumo-n1-cant-bolsas').value = Math.min(1, bolsasTotales);
       document.getElementById('consumo-n1-motivo').value = "Consumo turno producción";
 
-      document.getElementById('consumo-n1-pallet-info').innerText = `${bulto.serial} - ${bulto.nombreMaterial} en [${bulto.filaBodega} Nivel 1 Pos ${bulto.posicionFila}]\nSaldo disponible: ${bulto.kilos.toFixed(1)} kg (~${bolsasTotales} bolsas de 25 kg).`;
+      document.getElementById('consumo-n1-pallet-info').innerText = `${bulto.serial} - ${bulto.nombreMaterial} en [${bulto.filaBodega} Nivel 1 Pos ${bulto.posicionFila}]\nSaldo disponible: ${bulto.kilos.toFixed(1)} kg (~${bolsasTotales} bolsas de ${pBolsa} kg).`;
 
       recalcularConsumoBolsasN1();
       abrirModal('modal-consumo-bolsas-n1');
@@ -965,7 +1025,7 @@
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
 
-      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || 25;
+      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || (bulto.pesoBolsa || 25);
       const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
       const kilosSacar = pesoBolsa * cantBolsas;
       const saldoFinal = Math.max(0, bulto.kilos - kilosSacar);
@@ -985,7 +1045,7 @@
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
 
-      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || 25;
+      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || (bulto.pesoBolsa || 25);
       const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
       const kilosSacar = pesoBolsa * cantBolsas;
       const motivo = document.getElementById('consumo-n1-motivo').value.trim() || "Consumo producción";
@@ -1026,6 +1086,7 @@
         nombreMaterial: bulto.nombreMaterial,
         kilos: kilosSacar,
         kilosIniciales: kilosSacar,
+        pesoBolsa: pesoBolsa,
         tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
         lote: bulto.lote,
         filaBodega: "Planta / Operación",
@@ -1064,7 +1125,7 @@
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
 
-      const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || 25;
+      const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || (bulto.pesoBolsa || 25);
       const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
       const kilosBajar = pesoBolsa * cantBolsas;
       const bolsasDisponibles = Math.floor(bulto.kilos / pesoBolsa);
@@ -1112,6 +1173,7 @@
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
 
+      const pBolsa = bulto.pesoBolsa || (obtenerMaterialPorNombre(bulto.nombreMaterial)?.pesoBolsaDefault) || 25;
       document.getElementById('rack-sel-serial').value = serial;
       document.getElementById('rack-sel-modo').value = modo;
 
@@ -1128,13 +1190,13 @@
       } else if (modo === 'ABASTECER_N1') {
         bloquePorcionado.style.display = 'block';
         document.getElementById('abast-modalidad').value = 'PORCIONADO';
-        document.getElementById('abast-peso-bolsa').value = 25;
-        const maxSugerido = Math.min(4, Math.max(1, Math.floor(bulto.kilos / 25)));
+        document.getElementById('abast-peso-bolsa').value = pBolsa;
+        const maxSugerido = Math.min(4, Math.max(1, Math.floor(bulto.kilos / pBolsa)));
         document.getElementById('abast-cant-bolsas').value = maxSugerido;
         toggleModalidadAbastecimiento();
 
         document.getElementById('titulo-modal-rack').innerText = `⬇️ Abastecer a Nivel 1 (Porcionado / Bolsas)`;
-        document.getElementById('subtitulo-modal-rack').innerText = `Pallet Madre ${serial} en Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) — Saldo: ${bulto.kilos.toFixed(1)} kg (${Math.floor(bulto.kilos / 25)} bolsas de 25kg):`;
+        document.getElementById('subtitulo-modal-rack').innerText = `Pallet Madre ${serial} en Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) — Saldo: ${bulto.kilos.toFixed(1)} kg (${Math.floor(bulto.kilos / pBolsa)} bolsas de ${pBolsa}kg):`;
       } else {
         bloquePorcionado.style.display = 'none';
         document.getElementById('titulo-modal-rack').innerText = `Mover Ubicación de ${serial}`;
@@ -1232,9 +1294,9 @@
         b.serial !== serial
       );
 
-      // LÓGICA DE ABASTECIMIENTO PORCIONADO (1, 2, 3 o 4 BOLSAS DE 25KG) DESDE NIVEL 2+ A NIVEL 1
+      // LÓGICA DE ABASTECIMIENTO PORCIONADO (BOLSAS) DESDE NIVEL 2+ A NIVEL 1
       if (modo === 'ABASTECER_N1' && document.getElementById('abast-modalidad').value === 'PORCIONADO') {
-        const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || 25;
+        const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || (bulto.pesoBolsa || 25);
         const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
         const kilosBajar = pesoBolsa * cantBolsas;
         const destinoCodigo = document.getElementById('abast-destino-codigo').value;
@@ -1266,6 +1328,7 @@
           const codExistente = state.bultos.find(b => b.serial === destinoCodigo);
           if (codExistente) {
             codExistente.kilos += kilosBajar;
+            codExistente.pesoBolsa = pesoBolsa;
             state.movimientos.unshift({
               id: crypto.randomUUID(),
               fecha: new Date().toISOString(),
@@ -1295,6 +1358,8 @@
           nombreMaterial: bulto.nombreMaterial,
           kilos: kilosBajar,
           kilosIniciales: kilosBajar,
+          bolsasPorPallet: cantBolsas,
+          pesoBolsa: pesoBolsa,
           tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
           lote: bulto.lote,
           filaBodega: filaDestino,
@@ -1433,7 +1498,8 @@
 
         // Si está en Nivel 2+ de Rack, el operador no puede sacarlo directamente; debe abastecerse a N1
         if (cfg.tipo === "Rack" && bulto.nivelApilado > 1 && !forzarSinFIFO) {
-          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen por bolsas del Nivel 1 (A Piso) y el encargado abastece bajando bolsas desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
+          const pBolsa = bulto.pesoBolsa || 25;
+          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen por bolsas del Nivel 1 (A Piso) y el encargado abastece bajando bolsas de ${pBolsa} kg desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
           if (confirm(msgAltura)) {
             abrirModalUbicacionRack(bulto.serial, "ABASTECER_N1");
           }
@@ -1522,10 +1588,12 @@
                 `;
               } else {
                 const palletRes = palletsEnPos[0] || null;
+                const pBolsa = palletRes ? (palletRes.pesoBolsa || 25) : 25;
+                const bls = palletRes ? Math.floor(palletRes.kilos / pBolsa) : 0;
                 celdasPosHtml += `
                   <div class="rack-pos-cell">
                     <small style="font-size: 0.65rem; font-weight: bold; color: var(--secondary-text); display: flex; justify-content: space-between;">
-                      <span>Pos ${p}</span><span>${palletRes ? Math.floor(palletRes.kilos/25) + ' bls' : 'Reserva'}</span>
+                      <span>Pos ${p}</span><span>${palletRes ? `${bls} bls x ${pBolsa}k` : 'Reserva'}</span>
                     </small>
                     ${renderSlot(palletRes, `Vacío (Pos ${p})`, false)}
                     ${palletRes ? `
@@ -1599,6 +1667,8 @@
     function renderSlot(pallet, nivelTexto, esRet) {
       if (!pallet) return `<div class="pallet-slot empty">Vacío (${nivelTexto})</div>`;
       const esFIFO = esPalletFIFOPrioritario(pallet.serial);
+      const pBolsa = pallet.pesoBolsa || 25;
+      const bls = Math.round(pallet.kilos / pBolsa);
 
       return `
         <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" style="${!esFIFO ? (esRet ? 'background: rgba(175, 82, 222, 0.15); color: var(--purple); border: 1px solid var(--purple);' : 'background: #e5e5ea; border: 1px solid var(--border);') : ''}" onclick="verDetallePallet('${pallet.serial}')">
@@ -1609,7 +1679,7 @@
           <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pallet.nombreMaterial}</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
             <span>${pallet.lote}</span>
-            <b>${pallet.kilos.toFixed(0)}k</b>
+            <b>${pallet.kilos.toFixed(0)}k (${bls}b)</b>
           </div>
         </div>
       `;
@@ -1673,6 +1743,8 @@
 
       const cfg = getConfigFila(b.filaBodega);
       const usaFIFO = materialUsaFIFO(b.nombreMaterial);
+      const pBolsa = b.pesoBolsa || (obtenerMaterialPorNombre(b.nombreMaterial)?.pesoBolsaDefault) || 25;
+      const bls = Math.round(b.kilos / pBolsa);
 
       document.getElementById('render-datos-detalle').innerHTML = `
         <div class="card" style="margin: 0; font-size: 0.8rem;">
@@ -1681,7 +1753,8 @@
           <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
           <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
           <hr style="margin: 6px 0;">
-          <p><b>Kilos Actuales:</b> ${b.kilos.toFixed(1)} kg (~${Math.floor(b.kilos/25)} bolsas de 25kg)</p>
+          <p><b>Composición:</b> Bolsas de ${pBolsa} kg (Saldo actual: ~${bls} bolsas)</p>
+          <p><b>Kilos Actuales:</b> ${b.kilos.toFixed(1)} kg</p>
           <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
         </div>
       `;
@@ -1690,7 +1763,7 @@
       if (cfg.tipo === "Rack") {
         let btns = "";
         if (b.nivelApilado > 1) {
-          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas Porcionado a Nivel 1 (1, 2, 3 o 4 Bolsas)</button>`;
+          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas Porcionado a Nivel 1 (Bolsas de ${pBolsa}kg)</button>`;
         } else {
           btns += `<button class="btn btn-green" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); abrirModalConsumoBolsasN1('${b.serial}');">📤 Retirar Bolsas para Producción (Picking)</button>`;
         }
@@ -1895,7 +1968,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 4px 0;">
                 <div>
                   <b>${b.serial}</b> <span style="font-size: 0.7rem; color: var(--secondary-text);">(${b.filaBodega} N${b.nivelApilado}-P${b.posicionFila})</span><br>
-                  <small>${b.nombreMaterial} • Lote: ${b.lote}</small>
+                  <small>${b.nombreMaterial} • Lote: ${b.lote} • ${b.tipoEmpaque || ''}</small>
                 </div>
                 <b>${b.kilos.toFixed(1)} kg</b>
               </div>
@@ -2007,11 +2080,13 @@
       const catCont = document.getElementById('lista-catalogo-gestion');
       catCont.innerHTML = state.catalogo.map(c => {
         const fifoOn = c.usaFIFO !== false;
+        const bls = c.bolsasPorPallet || 1;
+        const pBolsa = c.pesoBolsaDefault || c.pesoDefault;
         return `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
             <div>
               <b>${c.nombre}</b><br>
-              <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
+              <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${bls} bls x ${pBolsa}kg = ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
               <button class="btn ${fifoOn ? 'btn-orange' : 'btn-bordered'}" style="font-size: 0.68rem; padding: 4px 8px;" onclick="toggleFIFOMaterialRapido('${c.id}')">
@@ -2076,6 +2151,14 @@
       }
     }
 
+    function calcularPesoDesdeBolsasEditor() {
+      const b = parseFloat(document.getElementById('editor-mat-bolsas').value) || 0;
+      const pb = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 0;
+      if (b > 0 && pb > 0) {
+        document.getElementById('editor-mat-peso').value = (b * pb).toFixed(1);
+      }
+    }
+
     function abrirModalMaterial(id) {
       document.getElementById('editor-mat-id').value = id || "";
       if (id) {
@@ -2083,6 +2166,8 @@
         document.getElementById('editor-mat-titulo').innerText = "Modificar Material";
         document.getElementById('editor-mat-codigo').value = m.codigo;
         document.getElementById('editor-mat-nombre').value = m.nombre;
+        document.getElementById('editor-mat-bolsas').value = m.bolsasPorPallet || 1;
+        document.getElementById('editor-mat-peso-bolsa').value = m.pesoBolsaDefault || m.pesoDefault;
         document.getElementById('editor-mat-peso').value = m.pesoDefault;
         document.getElementById('editor-mat-empaque').value = m.tipoEmpaque;
         document.getElementById('editor-mat-fifo').value = (m.usaFIFO !== false) ? "true" : "false";
@@ -2091,8 +2176,10 @@
         document.getElementById('editor-mat-titulo').innerText = "Nuevo Material";
         document.getElementById('editor-mat-codigo').value = "";
         document.getElementById('editor-mat-nombre').value = "";
-        document.getElementById('editor-mat-peso').value = 1200;
-        document.getElementById('editor-mat-empaque').value = "Pallet";
+        document.getElementById('editor-mat-bolsas').value = 25;
+        document.getElementById('editor-mat-peso-bolsa').value = 15;
+        document.getElementById('editor-mat-peso').value = 375;
+        document.getElementById('editor-mat-empaque').value = "Bolsas en Pallet";
         document.getElementById('editor-mat-fifo').value = "true";
         document.getElementById('btn-eliminar-material').style.display = "none";
       }
@@ -2103,7 +2190,9 @@
       const id = document.getElementById('editor-mat-id').value;
       const codigo = document.getElementById('editor-mat-codigo').value.trim().toUpperCase();
       const nombre = document.getElementById('editor-mat-nombre').value.trim();
-      const peso = parseFloat(document.getElementById('editor-mat-peso').value);
+      const bolsasPorPallet = parseInt(document.getElementById('editor-mat-bolsas').value) || 1;
+      const pesoBolsaDefault = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 25;
+      const peso = parseFloat(document.getElementById('editor-mat-peso').value) || (bolsasPorPallet * pesoBolsaDefault);
       const empaque = document.getElementById('editor-mat-empaque').value;
       const usaFIFO = document.getElementById('editor-mat-fifo').value === "true";
 
@@ -2111,9 +2200,24 @@
 
       if (id) {
         const m = state.catalogo.find(x => x.id === id);
-        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.tipoEmpaque = empaque; m.usaFIFO = usaFIFO;
+        m.codigo = codigo;
+        m.nombre = nombre;
+        m.pesoDefault = peso;
+        m.bolsasPorPallet = bolsasPorPallet;
+        m.pesoBolsaDefault = pesoBolsaDefault;
+        m.tipoEmpaque = empaque;
+        m.usaFIFO = usaFIFO;
       } else {
-        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, tipoEmpaque: empaque, usaFIFO });
+        state.catalogo.push({
+          id: crypto.randomUUID(),
+          codigo,
+          nombre,
+          pesoDefault: peso,
+          bolsasPorPallet,
+          pesoBolsaDefault,
+          tipoEmpaque: empaque,
+          usaFIFO
+        });
       }
       guardarTodo();
       poblarSelectores();
@@ -2222,7 +2326,19 @@
           state = JSON.parse(evt.target.result);
           if (!state.configFilas) state.configFilas = {};
           if (state.catalogo) {
-            state.catalogo.forEach(c => { if (c.usaFIFO === undefined) c.usaFIFO = true; });
+            state.catalogo.forEach(c => {
+              if (c.usaFIFO === undefined) c.usaFIFO = true;
+              if (!c.bolsasPorPallet) c.bolsasPorPallet = Math.max(1, Math.round(c.pesoDefault / 25)) || 1;
+              if (!c.pesoBolsaDefault) c.pesoBolsaDefault = (c.pesoDefault / c.bolsasPorPallet) || 25;
+            });
+          }
+          if (state.bultos) {
+            state.bultos.forEach(b => {
+              if (!b.pesoBolsa) {
+                const m = obtenerMaterialPorNombre(b.nombreMaterial);
+                b.pesoBolsa = m ? m.pesoBolsaDefault : 25;
+              }
+            });
           }
           guardarTodo();
           poblarSelectores();
