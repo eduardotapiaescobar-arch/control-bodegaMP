@@ -284,13 +284,47 @@
     </div>
   </div>
 
-  <!-- MODAL UBICACIÓN EN RACK (ELEGIR NIVEL Y POSICIÓN AL INGRESAR O MOVER) -->
+  <!-- MODAL UBICACIÓN Y ABASTECIMIENTO PORCIONADO EN RACK -->
   <div id="modal-ubicacion-rack" class="modal">
     <div class="modal-content">
       <h3 id="titulo-modal-rack" style="color: var(--blue);">Elegir Ubicación en Rack</h3>
       <p id="subtitulo-modal-rack" style="font-size: 0.82rem; color: var(--secondary-text); margin: 6px 0;"></p>
       <input type="hidden" id="rack-sel-serial">
       <input type="hidden" id="rack-sel-modo">
+
+      <!-- BLOQUE EXCLUSIVO PARA ABASTECIMIENTO PORCIONADO DESDE NIVEL 2+ A NIVEL 1 -->
+      <div id="bloque-abastecer-porcionado" style="display: none; background: #f2f2f7; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+        <label style="font-size: 0.8rem; font-weight: bold; color: var(--blue);">Modalidad de Bajada a Nivel 1:</label>
+        <select id="abast-modalidad" onchange="toggleModalidadAbastecimiento()" style="margin-bottom: 8px;">
+          <option value="PORCIONADO">Porcionar por Bolsas (Bajar 1, 2, 3 o 4 bolsas)</option>
+          <option value="COMPLETO">Bajar el Pallet Completo</option>
+        </select>
+
+        <div id="subbloque-porcionado-bolsas">
+          <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
+              <input type="number" id="abast-peso-bolsa" value="25" oninput="recalcularPorcionadoBolsas()" style="margin-bottom: 6px; padding: 8px;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; color: var(--secondary-text);">Cant. Bolsas a Bajar:</label>
+              <input type="number" id="abast-cant-bolsas" value="4" min="1" oninput="recalcularPorcionadoBolsas()" style="margin-bottom: 6px; padding: 8px;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(1)">1 Bolsa</button>
+            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(2)">2 Bolsas</button>
+            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(3)">3 Bolsas</button>
+            <button type="button" class="btn btn-blue" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(4)">4 Bolsas</button>
+          </div>
+
+          <p id="resumen-porcionado-kilos" style="font-size: 0.8rem; font-weight: bold; color: var(--green); margin-bottom: 8px;"></p>
+
+          <label style="font-size: 0.78rem; font-weight: bold;">Destino de las bolsas en la Posición elegida (Nivel 1):</label>
+          <select id="abast-destino-codigo" style="margin-bottom: 4px;"></select>
+        </div>
+      </div>
 
       <label style="font-size: 0.8rem; font-weight: bold;">Fila / Rack:</label>
       <select id="rack-sel-fila" onchange="actualizarOpcionesNivelPosRack()"></select>
@@ -299,7 +333,7 @@
       <select id="rack-sel-nivel" onchange="actualizarPosicionesDisponiblesRack()"></select>
 
       <label style="font-size: 0.8rem; font-weight: bold;">Posición en el Nivel (Lado a Lado):</label>
-      <select id="rack-sel-posicion"></select>
+      <select id="rack-sel-posicion" onchange="actualizarOpcionesDestinoPorcionado()"></select>
 
       <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: #1b7a34; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
         ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> (Ej: 4 bolsas por código) para extracción directa de operadores.
@@ -307,7 +341,7 @@
 
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-ubicacion-rack')">Cancelar</button>
-        <button class="btn btn-blue" style="flex: 1;" onclick="confirmarUbicacionRack()">Confirmar Ubicación</button>
+        <button class="btn btn-blue" style="flex: 1;" onclick="confirmarUbicacionRack()">Confirmar</button>
       </div>
     </div>
   </div>
@@ -556,7 +590,6 @@
 
     function esExtraiblePorOperador(pallet) {
       const cfg = getConfigFila(pallet.filaBodega);
-      // En Rack, los operadores sacan del Nivel 1 (a piso); Nivel 2+ es reserva para que el encargado abastezca al Nivel 1
       if (cfg.tipo === "Rack") {
         return pallet.nivelApilado === 1;
       }
@@ -768,7 +801,7 @@
       banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
       banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
       document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO / PICKING OPERADORES';
-      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack los operadores extraen del Nivel 1 (Piso) y el encargado abastece desde Nivel 2+.';
+      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack los operadores extraen del Nivel 1 (Piso) y el encargado abastece porcionado desde Nivel 2+.';
 
       document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
       document.getElementById('btn-scanner-principal').innerText = esEntrada ? 'Escanear Entrada a Bodega' : 'Escanear Cualquier Pallet con Cámara';
@@ -831,11 +864,11 @@
                     <div style="background: white; border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                       <div>
                         <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
-                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k</small>
+                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${Math.round(p.kilos/25)} bolsas aprox.)</small>
                       </div>
                       <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar</button>
                     </div>
-                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin códigos en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
+                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin códigos en Nivel 1. El encargado debe abastecer (1 a 4 bolsas) desde Nivel 2+.</small>`}
                 </div>
                 ${g.palletsReservaAltura.length > 0 ? `
                   <div style="margin-top: 8px; border-top: 1px dashed rgba(0,122,255,0.3); padding-top: 6px;">
@@ -843,8 +876,8 @@
                     <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
                       ${g.palletsReservaAltura.map(p => `
                         <div style="background: #eef4ff; border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k</span>
-                          <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ A N1</button>
+                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k (${Math.floor(p.kilos/25)} bls)</span>
+                          <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas a N1</button>
                         </div>
                       `).join('')}
                     </div>
@@ -868,7 +901,67 @@
       `).join('');
     }
 
-    // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO EN RACK ---
+    // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO PORCIONADO EN RACK ---
+    function setBolsasAbastecer(cant) {
+      document.getElementById('abast-cant-bolsas').value = cant;
+      recalcularPorcionadoBolsas();
+    }
+
+    function toggleModalidadAbastecimiento() {
+      const mod = document.getElementById('abast-modalidad').value;
+      document.getElementById('subbloque-porcionado-bolsas').style.display = (mod === 'PORCIONADO') ? 'block' : 'none';
+      recalcularPorcionadoBolsas();
+    }
+
+    function recalcularPorcionadoBolsas() {
+      const serial = document.getElementById('rack-sel-serial').value;
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || 25;
+      const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
+      const kilosBajar = pesoBolsa * cantBolsas;
+      const bolsasDisponibles = Math.floor(bulto.kilos / pesoBolsa);
+      const saldoRestante = Math.max(0, bulto.kilos - kilosBajar);
+
+      const resumen = document.getElementById('resumen-porcionado-kilos');
+      if (kilosBajar > bulto.kilos) {
+        resumen.style.color = 'var(--red)';
+        resumen.innerText = `⚠️ Excede el saldo del pallet (${bulto.kilos.toFixed(1)} kg / ${bolsasDisponibles} bolsas disponibles).`;
+      } else {
+        resumen.style.color = '#1b7a34';
+        resumen.innerText = `Se bajarán ${cantBolsas} bolsa(s) = ${kilosBajar.toFixed(1)} kg a Nivel 1.\nQuedarán arriba en ${bulto.serial}: ${saldoRestante.toFixed(1)} kg (${Math.floor(saldoRestante / pesoBolsa)} bolsas).`;
+      }
+    }
+
+    function actualizarOpcionesDestinoPorcionado() {
+      const modo = document.getElementById('rack-sel-modo').value;
+      if (modo !== 'ABASTECER_N1') return;
+
+      const fila = document.getElementById('rack-sel-fila').value;
+      const pos = parseInt(document.getElementById('rack-sel-posicion').value) || 1;
+      const serialMadre = document.getElementById('rack-sel-serial').value;
+      const bultoMadre = state.bultos.find(b => b.serial === serialMadre);
+
+      const codigosEnPosN1 = state.bultos.filter(b =>
+        b.filaBodega === fila &&
+        b.estado === 'En Stock' &&
+        b.nivelApilado === 1 &&
+        b.posicionFila === pos
+      );
+
+      const selDestino = document.getElementById('abast-destino-codigo');
+      let html = `<option value="NUEVO">➕ Crear nuevo código de Picking en Pos ${pos} (${codigosEnPosN1.length}/2 ocupados)</option>`;
+
+      codigosEnPosN1.forEach(c => {
+        if (!bultoMadre || c.nombreMaterial === bultoMadre.nombreMaterial) {
+          html += `<option value="${c.serial}">📦 Sumar bolsas al código existente ${c.serial} (Tiene ${c.kilos.toFixed(0)} kg)</option>`;
+        }
+      });
+
+      selDestino.innerHTML = html;
+    }
+
     function abrirModalUbicacionRack(serial, modo) {
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
@@ -880,13 +973,24 @@
       const racksDisponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
       selFila.innerHTML = racksDisponibles.map(f => `<option value="${f}" ${f === bulto.filaBodega ? 'selected' : ''}>${f} (${getConfigFila(f).tipo})</option>`).join('');
 
+      const bloquePorcionado = document.getElementById('bloque-abastecer-porcionado');
+
       if (modo === 'ENTRADA') {
+        bloquePorcionado.style.display = 'none';
         document.getElementById('titulo-modal-rack').innerText = `Ubicar ${serial} en Rack`;
         document.getElementById('subtitulo-modal-rack').innerText = `${bulto.nombreMaterial} (${bulto.kilos.toFixed(1)} kg) — Elige el Nivel y la Posición:`;
       } else if (modo === 'ABASTECER_N1') {
-        document.getElementById('titulo-modal-rack').innerText = `⬇️ Abastecer a Nivel 1 (Picking)`;
-        document.getElementById('subtitulo-modal-rack').innerText = `Bajar ${serial} desde Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) hacia una posición del Nivel 1 (A Piso):`;
+        bloquePorcionado.style.display = 'block';
+        document.getElementById('abast-modalidad').value = 'PORCIONADO';
+        document.getElementById('abast-peso-bolsa').value = 25;
+        const maxSugerido = Math.min(4, Math.max(1, Math.floor(bulto.kilos / 25)));
+        document.getElementById('abast-cant-bolsas').value = maxSugerido;
+        toggleModalidadAbastecimiento();
+
+        document.getElementById('titulo-modal-rack').innerText = `⬇️ Abastecer a Nivel 1 (Porcionado / Bolsas)`;
+        document.getElementById('subtitulo-modal-rack').innerText = `Pallet Madre ${serial} en Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) — Saldo: ${bulto.kilos.toFixed(1)} kg (${Math.floor(bulto.kilos / 25)} bolsas de 25kg):`;
       } else {
+        bloquePorcionado.style.display = 'none';
         document.getElementById('titulo-modal-rack').innerText = `Mover Ubicación de ${serial}`;
         document.getElementById('subtitulo-modal-rack').innerText = `Selecciona el nuevo Nivel y Posición dentro del Rack:`;
       }
@@ -934,7 +1038,6 @@
         b.serial !== serialActual
       );
 
-      // Capacidad por posición: En Rack Nivel 1 caben 2 códigos por posición; en Nivel 2+ cabe 1 pallet por posición
       const capacidadPorPosicion = (cfg.tipo === 'Rack' && nivel === 1) ? 2 : 1;
 
       const selPos = document.getElementById('rack-sel-posicion');
@@ -945,11 +1048,11 @@
         const ocupantes = enFilaNivel.filter(b => b.posicionFila === p);
         const cant = ocupantes.length;
         const libre = cant < capacidadPorPosicion;
-        const nombresOcupantes = ocupantes.map(o => o.serial).join(' + ');
+        const nombresOcupantes = ocupantes.map(o => `${o.serial} (${o.kilos.toFixed(0)}k)`).join(' + ');
 
         let estadoTexto = "";
         if (capacidadPorPosicion === 2) {
-          estadoTexto = `(${cant}/2 códigos ocupados${cant > 0 ? ': ' + nombresOcupantes : ' - Libre'})`;
+          estadoTexto = `(${cant}/2 códigos${cant > 0 ? ': ' + nombresOcupantes : ' - Libre'})`;
         } else {
           estadoTexto = cant === 0 ? '(Libre)' : `(Ocupado por ${nombresOcupantes})`;
         }
@@ -960,6 +1063,7 @@
         htmlPos += `<option value="${p}" ${selectedAttr}>Posición ${p} ${estadoTexto}</option>`;
       }
       selPos.innerHTML = htmlPos;
+      actualizarOpcionesDestinoPorcionado();
     }
 
     function confirmarUbicacionRack() {
@@ -982,6 +1086,104 @@
         b.serial !== serial
       );
 
+      // LÓGICA DE ABASTECIMIENTO PORCIONADO (1, 2, 3 o 4 BOLSAS DE 25KG) DESDE NIVEL 2+ A NIVEL 1
+      if (modo === 'ABASTECER_N1' && document.getElementById('abast-modalidad').value === 'PORCIONADO') {
+        const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || 25;
+        const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
+        const kilosBajar = pesoBolsa * cantBolsas;
+        const destinoCodigo = document.getElementById('abast-destino-codigo').value;
+
+        if (cantBolsas <= 0 || isNaN(kilosBajar) || kilosBajar <= 0) {
+          alert("Ingresa una cantidad válida de bolsas a bajar.");
+          return;
+        }
+        if (kilosBajar > bulto.kilos) {
+          alert(`No puedes bajar ${kilosBajar.toFixed(1)} kg (${cantBolsas} bolsas) porque el pallet ${bulto.serial} solo tiene ${bulto.kilos.toFixed(1)} kg.`);
+          return;
+        }
+
+        if (destinoCodigo === 'NUEVO' && ocupantes.length >= capacidadMax) {
+          if (!confirm(`⚠️ La Posición ${posDestino} del Nivel 1 ya tiene ${ocupantes.length}/2 códigos ocupados.\n¿Deseas crear igualmente un código nuevo en esta posición?`)) {
+            return;
+          }
+        }
+
+        // Descontar kilos del pallet madre en Nivel 2+
+        const nivelOrigen = bulto.nivelApilado;
+        const posOrigen = bulto.posicionFila;
+        bulto.kilos = Math.max(0, bulto.kilos - kilosBajar);
+        if (bulto.kilos === 0) {
+          bulto.estado = "Consumido";
+        }
+
+        if (destinoCodigo !== 'NUEVO') {
+          // Sumar las bolsas a un código existente en Nivel 1
+          const codExistente = state.bultos.find(b => b.serial === destinoCodigo);
+          if (codExistente) {
+            codExistente.kilos += kilosBajar;
+            state.movimientos.unshift({
+              id: crypto.randomUUID(),
+              fecha: new Date().toISOString(),
+              serialBulto: codExistente.serial,
+              nombreMaterial: codExistente.nombreMaterial,
+              kilos: kilosBajar,
+              tipo: "ABASTECIMIENTO PORCIONADO (N2+ ➔ N1)",
+              detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) recargando el código ${codExistente.serial} en Nivel 1 (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
+            });
+            guardarTodo();
+            cerrarModal('modal-ubicacion-rack');
+            cerrarModal('modal-pallet-mapa');
+            renderizarBodega();
+            renderizarMapa();
+            alert(`¡Abastecimiento exitoso!\nSe bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) al código ${codExistente.serial} en Nivel 1 (Pos ${posDestino}).`);
+            return;
+          }
+        }
+
+        // Crear un nuevo código de Picking en Nivel 1 con las bolsas bajadas
+        state.contador++;
+        const nuevoSerial = `BTO-${String(state.contador).padStart(5, '0')}`;
+        const nuevoBultoN1 = {
+          id: crypto.randomUUID(),
+          serial: nuevoSerial,
+          codigoMaterial: bulto.codigoMaterial,
+          nombreMaterial: bulto.nombreMaterial,
+          kilos: kilosBajar,
+          kilosIniciales: kilosBajar,
+          tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
+          lote: bulto.lote,
+          filaBodega: filaDestino,
+          posicionFila: posDestino,
+          nivelApilado: 1,
+          subSlot: ocupantes.length + 1,
+          fechaCreacion: new Date().toISOString(),
+          fechaIngresoBodega: bulto.fechaIngresoBodega || new Date().toISOString(),
+          estado: "En Stock",
+          ajustadoEnTurno: false
+        };
+        state.bultos.push(nuevoBultoN1);
+
+        state.movimientos.unshift({
+          id: crypto.randomUUID(),
+          fecha: new Date().toISOString(),
+          serialBulto: nuevoBultoN1.serial,
+          nombreMaterial: nuevoBultoN1.nombreMaterial,
+          kilos: kilosBajar,
+          tipo: "ABASTECIMIENTO PORCIONADO (N2+ ➔ N1)",
+          detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) creando ${nuevoBultoN1.serial} en Nivel 1 (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
+        });
+
+        guardarTodo();
+        cerrarModal('modal-ubicacion-rack');
+        cerrarModal('modal-pallet-mapa');
+        renderizarBodega();
+        renderizarMapa();
+        ultimoLoteGenerado = [nuevoBultoN1];
+        renderizarEtiquetasBrother([nuevoBultoN1]);
+        return;
+      }
+
+      // MOVIMIENTO / ENTRADA DE PALLET COMPLETO
       if (ocupantes.length >= capacidadMax) {
         if (!confirm(`⚠️ La Posición ${posDestino} del Nivel ${nivelDestino} ya tiene ${ocupantes.length}/${capacidadMax} código(s) (${ocupantes.map(x => x.serial).join(', ')}).\n¿Deseas asignarlo ahí de todas formas?`)) {
           return;
@@ -1015,7 +1217,7 @@
           nombreMaterial: bulto.nombreMaterial,
           kilos: bulto.kilos,
           tipo: "ABASTECIMIENTO ENCARGADO (N2+ ➔ N1)",
-          detalle: `Abastecido por encargado desde ${ubicacionAnterior} hacia Nivel 1 Picking (Pos ${bulto.posicionFila})`
+          detalle: `Pallet completo bajado por encargado desde ${ubicacionAnterior} hacia Nivel 1 Picking (Pos ${bulto.posicionFila})`
         });
       } else {
         state.movimientos.unshift({
@@ -1048,7 +1250,6 @@
 
         const cfg = getConfigFila(bulto.filaBodega);
         if (cfg.tipo === "Rack") {
-          // Si va a un Rack, abrir modal para elegir Nivel y Posición
           abrirModalUbicacionRack(bulto.serial, "ENTRADA");
           return;
         }
@@ -1079,8 +1280,11 @@
 
         const cfg = getConfigFila(bulto.filaBodega);
         if (cfg.tipo === "Rack" && bulto.nivelApilado > 1 && !forzarSinFIFO) {
-          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen del Nivel 1 (A Piso) y el encargado abastece bajando pallets desde el Nivel 2+.\n\n¿Deseas que el encargado lo baje primero a Nivel 1 desde el Mapa, o forzar la salida directa a Planta?`;
-          if (!confirm(msgAltura)) return;
+          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen del Nivel 1 (A Piso) y el encargado abastece bajando 1 a 4 bolsas desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
+          if (confirm(msgAltura)) {
+            abrirModalUbicacionRack(bulto.serial, "ABASTECER_N1");
+          }
+          return;
         }
 
         const usaFIFO = materialUsaFIFO(bulto.nombreMaterial);
@@ -1153,7 +1357,6 @@
               const palletsEnPos = palletsFila.filter(b => b.nivelApilado === n && b.posicionFila === p);
 
               if (n === 1) {
-                // Nivel 1: 2 códigos por posición (Picking Operadores)
                 const codA = palletsEnPos[0] || null;
                 const codB = palletsEnPos[1] || null;
                 celdasPosHtml += `
@@ -1166,17 +1369,16 @@
                   </div>
                 `;
               } else {
-                // Nivel 2+: Reserva Encargado (1 pallet por posición, con botón rápido para bajar a Nivel 1)
                 const palletRes = palletsEnPos[0] || null;
                 celdasPosHtml += `
                   <div class="rack-pos-cell">
                     <small style="font-size: 0.65rem; font-weight: bold; color: var(--secondary-text); display: flex; justify-content: space-between;">
-                      <span>Pos ${p}</span><span>Reserva</span>
+                      <span>Pos ${p}</span><span>${palletRes ? Math.floor(palletRes.kilos/25) + ' bls' : 'Reserva'}</span>
                     </small>
                     ${renderSlot(palletRes, `Vacío (Pos ${p})`, false)}
                     ${palletRes ? `
                       <button class="btn btn-blue" style="font-size: 0.65rem; padding: 3px 6px; width: 100%;" onclick="abrirModalUbicacionRack('${palletRes.serial}', 'ABASTECER_N1')">
-                        ⬇️ Bajar a N1
+                        ⬇️ Bajar Bolsas a N1
                       </button>
                     ` : ''}
                   </div>
@@ -1187,7 +1389,7 @@
             nivelesHtml += `
               <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
                 <small style="font-size: 0.7rem; color: ${n === 1 ? '#1b7a34' : 'var(--blue)'}; font-weight: bold;">
-                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking Operadores: 2 Códigos x Pos)' : `🔵 Nivel ${n} (Altura — Reserva Encargado)`}
+                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking Operadores: 2 Códigos x Pos)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
                 </small>
                 <div class="rack-level-row">
                   ${celdasPosHtml}
@@ -1267,7 +1469,6 @@
       const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
       todas.forEach(fila => {
         const cfg = getConfigFila(fila);
-        // En Rack se respetan las posiciones elegidas manualmente y el flujo de abastecimiento N2+ -> N1
         if (fila !== nombreFilaRetornados && cfg.tipo === "Rack") return;
 
         const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock')
@@ -1328,7 +1529,7 @@
           <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
           <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
           <hr style="margin: 6px 0;">
-          <p><b>Kilos:</b> ${b.kilos.toFixed(1)} kg (${b.tipoEmpaque})</p>
+          <p><b>Kilos Actuales:</b> ${b.kilos.toFixed(1)} kg (~${Math.floor(b.kilos/25)} bolsas de 25kg)</p>
           <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
         </div>
       `;
@@ -1337,7 +1538,7 @@
       if (cfg.tipo === "Rack") {
         let btns = "";
         if (b.nivelApilado > 1) {
-          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar a Nivel 1 (Abastecer Picking Operadores)</button>`;
+          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas Porcionado a Nivel 1 (1, 2, 3 o 4 Bolsas)</button>`;
         } else {
           btns += `<button class="btn btn-orange" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); procesarEscaneoBodega('${b.serial}');">📤 Extraer a Producción (Picking Operador)</button>`;
         }
