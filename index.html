@@ -284,6 +284,43 @@
     </div>
   </div>
 
+  <!-- MODAL RETIRO / CONSUMO DE BOLSAS EN NIVEL 1 DE RACK (OPERADORES Y ENCARGADO) -->
+  <div id="modal-consumo-bolsas-n1" class="modal">
+    <div class="modal-content">
+      <h3 style="color: var(--green);">📤 Retiro de Bolsas (Nivel 1 Picking)</h3>
+      <p id="consumo-n1-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <input type="hidden" id="consumo-n1-serial">
+
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <div style="flex: 1;">
+          <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
+          <input type="number" id="consumo-n1-peso-bolsa" value="25" oninput="recalcularConsumoBolsasN1()" style="padding: 8px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.75rem; color: var(--secondary-text);">Cant. Bolsas a Sacar:</label>
+          <input type="number" id="consumo-n1-cant-bolsas" value="1" min="1" oninput="recalcularConsumoBolsasN1()" style="padding: 8px;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(1)">1 Bolsa</button>
+        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(2)">2 Bolsas</button>
+        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(3)">3 Bolsas</button>
+        <button type="button" class="btn btn-blue" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(4)">4 Bolsas</button>
+      </div>
+
+      <p id="consumo-n1-resumen" style="font-size: 0.8rem; font-weight: bold; color: var(--green); margin-bottom: 8px;"></p>
+
+      <label style="font-size: 0.78rem; font-weight: bold;">Motivo / Destino:</label>
+      <input type="text" id="consumo-n1-motivo" value="Consumo turno producción">
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-consumo-bolsas-n1')">Cancelar</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="confirmarConsumoBolsasN1()">Confirmar Retiro</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL UBICACIÓN Y ABASTECIMIENTO PORCIONADO EN RACK -->
   <div id="modal-ubicacion-rack" class="modal">
     <div class="modal-content">
@@ -801,7 +838,7 @@
       banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
       banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
       document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO / PICKING OPERADORES';
-      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack los operadores extraen del Nivel 1 (Piso) y el encargado abastece porcionado desde Nivel 2+.';
+      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack Nivel 1 se rebaja por bolsas; el encargado abastece porcionado desde Nivel 2+.';
 
       document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
       document.getElementById('btn-scanner-principal').innerText = esEntrada ? 'Escanear Entrada a Bodega' : 'Escanear Cualquier Pallet con Cámara';
@@ -858,17 +895,17 @@
               ` : ''}
             ` : `
               <div style="background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.25); border-radius: 8px; padding: 8px; margin-top: 8px;">
-                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (OPERADORES) — Libre extracción:</small>
+                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (OPERADORES) — Retiro por Bolsas:</small>
                 <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 6px;">
                   ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => `
                     <div style="background: white; border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                       <div>
                         <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
-                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${Math.round(p.kilos/25)} bolsas aprox.)</small>
+                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${Math.round(p.kilos/25)} bls)</small>
                       </div>
-                      <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar</button>
+                      <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar Bolsas</button>
                     </div>
-                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin códigos en Nivel 1. El encargado debe abastecer (1 a 4 bolsas) desde Nivel 2+.</small>`}
+                  `).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin bolsas disponibles en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
                 </div>
                 ${g.palletsReservaAltura.length > 0 ? `
                   <div style="margin-top: 8px; border-top: 1px dashed rgba(0,122,255,0.3); padding-top: 6px;">
@@ -899,6 +936,115 @@
           <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
         </div>
       `).join('');
+    }
+
+    // --- CONSUMO / RETIRO DE BOLSAS EN NIVEL 1 DE RACK ---
+    function abrirModalConsumoBolsasN1(serial) {
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      document.getElementById('consumo-n1-serial').value = serial;
+      document.getElementById('consumo-n1-peso-bolsa').value = 25;
+      const bolsasTotales = Math.max(1, Math.floor(bulto.kilos / 25));
+      document.getElementById('consumo-n1-cant-bolsas').value = Math.min(1, bolsasTotales);
+      document.getElementById('consumo-n1-motivo').value = "Consumo turno producción";
+
+      document.getElementById('consumo-n1-pallet-info').innerText = `${bulto.serial} - ${bulto.nombreMaterial} en [${bulto.filaBodega} Nivel 1 Pos ${bulto.posicionFila}]\nSaldo disponible: ${bulto.kilos.toFixed(1)} kg (~${bolsasTotales} bolsas de 25 kg).`;
+
+      recalcularConsumoBolsasN1();
+      abrirModal('modal-consumo-bolsas-n1');
+    }
+
+    function setBolsasConsumoN1(cant) {
+      document.getElementById('consumo-n1-cant-bolsas').value = cant;
+      recalcularConsumoBolsasN1();
+    }
+
+    function recalcularConsumoBolsasN1() {
+      const serial = document.getElementById('consumo-n1-serial').value;
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || 25;
+      const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
+      const kilosSacar = pesoBolsa * cantBolsas;
+      const saldoFinal = Math.max(0, bulto.kilos - kilosSacar);
+
+      const resumen = document.getElementById('consumo-n1-resumen');
+      if (kilosSacar > bulto.kilos) {
+        resumen.style.color = 'var(--red)';
+        resumen.innerText = `⚠️ No hay suficientes bolsas (intentas sacar ${kilosSacar.toFixed(1)} kg y solo quedan ${bulto.kilos.toFixed(1)} kg).`;
+      } else {
+        resumen.style.color = '#1b7a34';
+        resumen.innerText = `Se retirarán ${cantBolsas} bolsa(s) = ${kilosSacar.toFixed(1)} kg para Planta.\nQuedarán en el Nivel 1: ${saldoFinal.toFixed(1)} kg (~${Math.floor(saldoFinal / pesoBolsa)} bolsas).`;
+      }
+    }
+
+    function confirmarConsumoBolsasN1() {
+      const serial = document.getElementById('consumo-n1-serial').value;
+      const bulto = state.bultos.find(b => b.serial === serial);
+      if (!bulto) return;
+
+      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || 25;
+      const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
+      const kilosSacar = pesoBolsa * cantBolsas;
+      const motivo = document.getElementById('consumo-n1-motivo').value.trim() || "Consumo producción";
+
+      if (cantBolsas <= 0 || isNaN(kilosSacar) || kilosSacar <= 0) {
+        alert("Ingresa una cantidad válida de bolsas.");
+        return;
+      }
+      if (kilosSacar > bulto.kilos) {
+        alert(`No puedes retirar ${kilosSacar.toFixed(1)} kg porque el código solo tiene ${bulto.kilos.toFixed(1)} kg.`);
+        return;
+      }
+
+      // Rebajar kilos del código que permanece en Nivel 1
+      bulto.kilos = Math.max(0, bulto.kilos - kilosSacar);
+      if (bulto.kilos === 0) {
+        bulto.estado = "Consumido";
+      }
+
+      // Registrar movimiento de retiro por bolsas
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: bulto.serial,
+        nombreMaterial: bulto.nombreMaterial,
+        kilos: kilosSacar,
+        tipo: "PICKING BOLSAS N1 (PRODUCCIÓN)",
+        detalle: `Operador retiró ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) desde ${bulto.filaBodega} (Nivel 1 - Pos ${bulto.posicionFila}). Motivo: ${motivo}. Saldo en piso: ${bulto.kilos.toFixed(1)} kg`
+      });
+
+      // Crear el registro de esas bolsas en Tránsito/Planta
+      state.contador++;
+      const serialConsumo = `PLT-${String(state.contador).padStart(5, '0')}`;
+      const bultoPlanta = {
+        id: crypto.randomUUID(),
+        serial: serialConsumo,
+        codigoMaterial: bulto.codigoMaterial,
+        nombreMaterial: bulto.nombreMaterial,
+        kilos: kilosSacar,
+        kilosIniciales: kilosSacar,
+        tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
+        lote: bulto.lote,
+        filaBodega: "Planta / Operación",
+        posicionFila: 1,
+        nivelApilado: 1,
+        fechaCreacion: new Date().toISOString(),
+        fechaIngresoBodega: new Date().toISOString(),
+        estado: "En Tránsito",
+        ajustadoEnTurno: false
+      };
+      state.bultos.push(bultoPlanta);
+
+      guardarTodo();
+      cerrarModal('modal-consumo-bolsas-n1');
+      cerrarModal('modal-pallet-mapa');
+      renderizarBodega();
+      renderizarMapa();
+      renderizarProduccion();
+      alert(`Retiro exitoso: ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) enviadas a Planta.\nSaldo restante en Nivel 1: ${bulto.kilos.toFixed(1)} kg.`);
     }
 
     // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO PORCIONADO EN RACK ---
@@ -1117,7 +1263,6 @@
         }
 
         if (destinoCodigo !== 'NUEVO') {
-          // Sumar las bolsas a un código existente en Nivel 1
           const codExistente = state.bultos.find(b => b.serial === destinoCodigo);
           if (codExistente) {
             codExistente.kilos += kilosBajar;
@@ -1279,8 +1424,16 @@
         if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
 
         const cfg = getConfigFila(bulto.filaBodega);
+        
+        // CONDICIÓN ESPECIAL RACK: Nivel 1 no se va completo, se rebaja por bolsas
+        if (cfg.tipo === "Rack" && bulto.nivelApilado === 1) {
+          abrirModalConsumoBolsasN1(bulto.serial);
+          return;
+        }
+
+        // Si está en Nivel 2+ de Rack, el operador no puede sacarlo directamente; debe abastecerse a N1
         if (cfg.tipo === "Rack" && bulto.nivelApilado > 1 && !forzarSinFIFO) {
-          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen del Nivel 1 (A Piso) y el encargado abastece bajando 1 a 4 bolsas desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
+          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen por bolsas del Nivel 1 (A Piso) y el encargado abastece bajando bolsas desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
           if (confirm(msgAltura)) {
             abrirModalUbicacionRack(bulto.serial, "ABASTECER_N1");
           }
@@ -1350,7 +1503,6 @@
           );
 
           let nivelesHtml = "";
-          // Nivel 1 abajo (a piso) y niveles superiores hacia arriba
           for (let n = maxNivelRack; n >= 1; n--) {
             let celdasPosHtml = "";
             for (let p = 1; p <= posPorNivel; p++) {
@@ -1364,8 +1516,8 @@
                     <small style="font-size: 0.65rem; font-weight: bold; color: #1b7a34; display: flex; justify-content: space-between;">
                       <span>Pos ${p}</span><span>(${palletsEnPos.length}/2 Cód)</span>
                     </small>
-                    ${renderSlot(codA, 'Cód 1 (4 Bolsas)', false)}
-                    ${renderSlot(codB, 'Cód 2 (4 Bolsas)', false)}
+                    ${renderSlot(codA, 'Cód 1 (Picking)', false)}
+                    ${renderSlot(codB, 'Cód 2 (Picking)', false)}
                   </div>
                 `;
               } else {
@@ -1389,7 +1541,7 @@
             nivelesHtml += `
               <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
                 <small style="font-size: 0.7rem; color: ${n === 1 ? '#1b7a34' : 'var(--blue)'}; font-weight: bold;">
-                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking Operadores: 2 Códigos x Pos)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
+                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking: Se retira por bolsas y queda saldo)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
                 </small>
                 <div class="rack-level-row">
                   ${celdasPosHtml}
@@ -1540,7 +1692,7 @@
         if (b.nivelApilado > 1) {
           btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas Porcionado a Nivel 1 (1, 2, 3 o 4 Bolsas)</button>`;
         } else {
-          btns += `<button class="btn btn-orange" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); procesarEscaneoBodega('${b.serial}');">📤 Extraer a Producción (Picking Operador)</button>`;
+          btns += `<button class="btn btn-green" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); abrirModalConsumoBolsasN1('${b.serial}');">📤 Retirar Bolsas para Producción (Picking)</button>`;
         }
         btns += `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Nivel / Posición en Rack</button>`;
         contAcciones.innerHTML = btns;
@@ -1557,14 +1709,14 @@
       const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
 
       if (enPlanta.length === 0) {
-        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay pallets en tránsito de producción.</small>`;
+        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay pallets o bolsas en tránsito de producción.</small>`;
       } else {
         cont.innerHTML = enPlanta.map(b => `
           <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <b>${b.serial}</b> ${b.ajustadoEnTurno ? '<span style="font-size: 0.65rem; background: rgba(0, 122, 255, 0.15); color: var(--blue); padding: 2px 4px; border-radius: 4px;">Ajustado</span>' : ''}<br>
               <span style="font-size: 0.8rem;">${b.nombreMaterial}</span><br>
-              <small style="color: var(--secondary-text);">Lote: ${b.lote} • ${b.filaBodega} • Inicial: ${b.kilosIniciales.toFixed(0)} kg</small>
+              <small style="color: var(--secondary-text);">${b.tipoEmpaque || 'Pallet'} • Lote: ${b.lote} • Inicial: ${b.kilosIniciales.toFixed(0)} kg</small>
             </div>
             <div style="text-align: right;">
               <b style="color: ${b.kilos < b.kilosIniciales ? 'var(--orange)' : 'var(--purple)'};">${b.kilos.toFixed(1)} kg</b>
