@@ -7,10 +7,11 @@
   <link rel="manifest" href="./manifest.json">
   <title>Bodega MP</title>
 
-  <!-- Librerías para Código 128, Generación Directa de PDF y Escáner de Cámara -->
+  <!-- Librerías para Código 128, Generación Directa de PDF, Escáner de Cámara y Excel (SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -277,6 +278,17 @@
     <div class="card">
       <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Catálogo de Materiales</h4>
       <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="abrirModalMaterial(null)">Nuevo Artículo al Catálogo</button>
+      
+      <!-- CARGA MASIVA DESDE EXCEL -->
+      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaCatalogoExcel()">📥 Plantilla Excel</button>
+        <input type="file" id="file-import-catalogo-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarCatalogoExcel(event)">
+        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-catalogo-excel').click()">📤 Cargar Excel Masivo</button>
+      </div>
+      <small style="display: block; color: var(--secondary-text); font-size: 0.68rem; margin-bottom: 8px;">
+        Columnas Excel: <b>Codigo | Nombre | BolsasPorPallet | PesoPorBolsa | PesoTotal | TipoEmpaque | FIFO</b>
+      </small>
+
       <div id="lista-catalogo-gestion"></div>
     </div>
   </section>
@@ -2234,6 +2246,138 @@
         renderizarGestionFilas();
         cerrarModal('modal-editor-material');
       }
+    }
+
+    // --- CARGA MASIVA DE CATÁLOGO DESDE EXCEL (.XLSX / .XLS / .CSV) ---
+    function descargarPlantillaCatalogoExcel() {
+      if (typeof XLSX === 'undefined') {
+        alert("La librería de Excel aún se está cargando. Revisa tu conexión e inténtalo de nuevo.");
+        return;
+      }
+      const datosEjemplo = [
+        {
+          Codigo: "RMGE00007",
+          Nombre: "Material - PA6 - Genérico - AZOTY",
+          BolsasPorPallet: 1,
+          PesoPorBolsa: 1200,
+          PesoTotal: 1200,
+          TipoEmpaque: "Pallet",
+          FIFO: "SI"
+        },
+        {
+          Codigo: "RMGE00012",
+          Nombre: "Material - PA6 - 1030MB",
+          BolsasPorPallet: 30,
+          PesoPorBolsa: 25,
+          PesoTotal: 750,
+          TipoEmpaque: "Bolsas en Pallet",
+          FIFO: "NO"
+        },
+        {
+          Codigo: "COL00045",
+          Nombre: "Colorante Negro Masterbatch",
+          BolsasPorPallet: 25,
+          PesoPorBolsa: 15,
+          PesoTotal: 375,
+          TipoEmpaque: "Bolsas en Pallet",
+          FIFO: "NO"
+        }
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(datosEjemplo);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Catalogo");
+      XLSX.writeFile(wb, "Plantilla_Catalogo_Materiales.xlsx");
+    }
+
+    function importarCatalogoExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const filas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (!filas || filas.length === 0) {
+            alert("El archivo Excel está vacío o no tiene filas válidas.");
+            event.target.value = "";
+            return;
+          }
+
+          let agregados = 0;
+          let actualizados = 0;
+
+          filas.forEach(row => {
+            // Normalizar nombres de columnas (sin importar mayúsculas/minúsculas, tildes o espacios)
+            const norm = {};
+            Object.keys(row).forEach(k => {
+              const cleanKey = k.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]/g, "");
+              norm[cleanKey] = row[k];
+            });
+
+            const codigo = String(norm.codigo || norm.cod || norm.codigomaterial || "").trim().toUpperCase();
+            const nombre = String(norm.nombre || norm.descripcion || norm.material || norm.nombrematerial || "").trim();
+
+            if (!codigo || !nombre) return;
+
+            const bolsasPorPallet = Math.max(1, parseInt(norm.bolsasporpallet || norm.bolsas || norm.cantidadbolsas || norm.bultos || 1) || 1);
+            const pesoBolsaDefault = parseFloat(norm.pesoporbolsa || norm.pesobolsa || norm.kilosbolsa || 0) || 0;
+            let pesoTotal = parseFloat(norm.pesototal || norm.peso || norm.pesodefault || norm.kilos || 0) || 0;
+
+            if (pesoTotal <= 0 && pesoBolsaDefault > 0) {
+              pesoTotal = bolsasPorPallet * pesoBolsaDefault;
+            }
+            const pesoBolsaFinal = pesoBolsaDefault > 0 ? pesoBolsaDefault : (pesoTotal > 0 ? (pesoTotal / bolsasPorPallet) : 25);
+            const pesoTotalFinal = pesoTotal > 0 ? pesoTotal : (bolsasPorPallet * pesoBolsaFinal);
+
+            const tipoEmpaque = String(norm.tipoempaque || norm.empaque || (bolsasPorPallet > 1 ? "Bolsas en Pallet" : "Pallet")).trim() || "Pallet";
+
+            const fifoRaw = String(norm.fifo || norm.usafifo || norm.controlfifo || "SI").trim().toUpperCase();
+            const usaFIFO = !(fifoRaw === "NO" || fifoRaw === "FALSE" || fifoRaw === "0" || fifoRaw === "OFF" || fifoRaw === "DESACTIVADO");
+
+            // Si ya existe mismo código y mismo nombre, se actualiza; si no, se agrega al catálogo
+            const existente = state.catalogo.find(c => c.codigo.toUpperCase() === codigo && c.nombre.toLowerCase() === nombre.toLowerCase());
+
+            if (existente) {
+              existente.pesoDefault = pesoTotalFinal;
+              existente.bolsasPorPallet = bolsasPorPallet;
+              existente.pesoBolsaDefault = pesoBolsaFinal;
+              existente.tipoEmpaque = tipoEmpaque;
+              existente.usaFIFO = usaFIFO;
+              actualizados++;
+            } else {
+              state.catalogo.push({
+                id: crypto.randomUUID(),
+                codigo: codigo,
+                nombre: nombre,
+                pesoDefault: pesoTotalFinal,
+                bolsasPorPallet: bolsasPorPallet,
+                pesoBolsaDefault: pesoBolsaFinal,
+                tipoEmpaque: tipoEmpaque,
+                usaFIFO: usaFIFO
+              });
+              agregados++;
+            }
+          });
+
+          guardarTodo();
+          poblarSelectores();
+          renderizarGestionFilas();
+          alert(`✅ Carga masiva de Excel completada:\n• Nuevos agregados: ${agregados}\n• Actualizados: ${actualizados}\n• Total en catálogo: ${state.catalogo.length}`);
+        } catch (err) {
+          console.error(err);
+          alert("Error al leer el archivo Excel. Verifica que sea un archivo .xlsx, .xls o .csv válido.");
+        }
+        event.target.value = "";
+      };
+      reader.readAsArrayBuffer(file);
     }
 
     // --- CÁMARA NATIVA HTML5 QRCODE ---
