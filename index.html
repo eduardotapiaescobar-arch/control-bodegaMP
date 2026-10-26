@@ -163,7 +163,7 @@
   <section id="view-bodega" class="view-section active">
     <div style="display: flex; gap: 6px; margin-bottom: 10px;">
       <button id="btn-modo-entrada" class="btn btn-green" style="flex: 1;" onclick="setModoOperacion('ENTRADA BODEGA')">📥 Entrada a Bodega</button>
-      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho / Picking</button>
+      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho a bodega</button>
     </div>
 
     <div id="banner-modo" class="card" style="background: rgba(52, 199, 89, 0.15); color: var(--green); border: none;">
@@ -947,7 +947,7 @@
       const banner = document.getElementById('banner-modo');
       banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
       banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
-      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO / PICKING OPERADORES';
+      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO A BODEGA';
       document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack Nivel 1 se rebaja por bolsas; el encargado abastece porcionado desde Nivel 2+.';
 
       document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
