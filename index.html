@@ -26,9 +26,30 @@
       --purple: #af52de;
       --red: #ff3b30;
       --gray: #8e8e93;
+      --input-bg: #ffffff;
+      --tabbar-bg: #f2f2f7;
+      --btn-bordered-bg: #e5e5ea;
+      --btn-bordered-text: #000000;
+      --slot-bg: #e5e5ea;
+      --subbox-bg: #f9f9fb;
     }
+
+    body.dark-mode {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --secondary-text: #94a3b8;
+      --border: #334155;
+      --input-bg: #0f172a;
+      --tabbar-bg: #1e293b;
+      --btn-bordered-bg: #334155;
+      --btn-bordered-text: #f8fafc;
+      --slot-bg: #334155;
+      --subbox-bg: #0f172a;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding-bottom: 75px; user-select: none; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 75px; user-select: none; transition: background 0.2s, color 0.2s; }
 
     header { background: #1c1c1e; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
     header h1 { font-size: 1.1rem; }
@@ -43,12 +64,12 @@
     .btn-orange { background: var(--orange); color: white; }
     .btn-purple { background: var(--purple); color: white; }
     .btn-red { background: var(--red); color: white; }
-    .btn-bordered { background: #e5e5ea; color: black; }
+    .btn-bordered { background: var(--btn-bordered-bg); color: var(--btn-bordered-text); }
 
-    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: white; }
+    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: var(--input-bg); color: var(--text); }
 
     /* Barra inferior */
-    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #f2f2f7; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: var(--tabbar-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
     .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.68rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
     .tab-item.active { color: var(--blue); font-weight: bold; }
     .tab-item svg { width: 18px; height: 18px; fill: currentColor; }
@@ -57,19 +78,19 @@
 
     /* Mapa de Bodega */
     .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
-    .fila-col { min-width: 125px; background: rgba(0,0,0,0.05); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
-    .fila-col.rack-col { min-width: 300px; background: rgba(0, 122, 255, 0.05); border: 1.5px solid rgba(0, 122, 255, 0.3); }
-    .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: #e5e5ea; border-radius: 8px; }
-    .pos-box { background: white; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
+    .fila-col { min-width: 125px; background: rgba(128,128,128,0.08); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
+    .fila-col.rack-col { min-width: 300px; background: rgba(0, 122, 255, 0.06); border: 1.5px solid rgba(0, 122, 255, 0.3); }
+    .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: var(--btn-bordered-bg); color: var(--text); border-radius: 8px; }
+    .pos-box { background: var(--card); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
     .rack-level-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-    .rack-pos-cell { min-width: 125px; flex: 1; background: #f9f9fb; border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
-    .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; }
+    .rack-pos-cell { min-width: 125px; flex: 1; background: var(--subbox-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
+    .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; color: var(--text); }
     .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
     .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
 
     /* Modales */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
-    .modal-content { background: white; width: 100%; max-width: 440px; max-height: 85vh; border-radius: 14px; overflow-y: auto; padding: 16px; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
+    .modal-content { background: var(--card); color: var(--text); width: 100%; max-width: 440px; max-height: 85vh; border-radius: 14px; overflow-y: auto; padding: 16px; border: 1px solid var(--border); }
     .etiqueta-brother { width: 320px; border: 1.5px solid black; background: white; padding: 14px; border-radius: 10px; margin: 10px auto; text-align: center; color: black; }
   </style>
 </head>
@@ -77,7 +98,10 @@
 
   <header>
     <h1 id="header-title">Bodega MP</h1>
-    <span id="stock-kilos-badge" style="font-size: 0.8rem; background: #2c2c2e; padding: 4px 8px; border-radius: 6px;">0.0 kg</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="btn-modo-noche" onclick="toggleModoNoche()" style="background: #2c2c2e; color: white; border: 1px solid #3a3a3c; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: bold;">🌙 Noche</button>
+      <span id="stock-kilos-badge" style="font-size: 0.8rem; background: #2c2c2e; padding: 4px 8px; border-radius: 6px;">0.0 kg</span>
+    </div>
   </header>
 
   <!-- 1. RECEPCIÓN CAMIÓN -->
@@ -253,7 +277,7 @@
         </select>
         <button class="btn btn-blue" onclick="agregarFila()">Añadir</button>
       </div>
-      <div id="opciones-nueva-fila-rack" style="display: none; gap: 6px; margin-top: 6px; background: #f2f2f7; padding: 8px; border-radius: 8px;">
+      <div id="opciones-nueva-fila-rack" style="display: none; gap: 6px; margin-top: 6px; background: var(--subbox-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
         <div style="flex: 1;">
           <label style="font-size: 0.72rem; color: var(--secondary-text);">Niveles de Altura (N1=Piso):</label>
           <input type="number" id="nueva-fila-niveles" value="3" min="1" max="10" style="margin: 2px 0 0 0; padding: 6px;">
@@ -353,7 +377,7 @@
       <input type="hidden" id="rack-sel-modo">
 
       <!-- BLOQUE EXCLUSIVO PARA ABASTECIMIENTO PORCIONADO DESDE NIVEL 2+ A NIVEL 1 -->
-      <div id="bloque-abastecer-porcionado" style="display: none; background: #f2f2f7; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+      <div id="bloque-abastecer-porcionado" style="display: none; background: var(--subbox-bg); padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
         <label style="font-size: 0.8rem; font-weight: bold; color: var(--blue);">Modalidad de Bajada a Nivel 1:</label>
         <select id="abast-modalidad" onchange="toggleModalidadAbastecimiento()" style="margin-bottom: 8px;">
           <option value="PORCIONADO">Porcionar por Bolsas (Bajar bolsas)</option>
@@ -395,7 +419,7 @@
       <label style="font-size: 0.8rem; font-weight: bold;">Posición en el Nivel (Lado a Lado):</label>
       <select id="rack-sel-posicion" onchange="actualizarOpcionesDestinoPorcionado()"></select>
 
-      <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: #1b7a34; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
+      <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: var(--green); padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
         ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> para extracción directa de operadores.
       </div>
 
@@ -542,6 +566,7 @@
 
     let state = {
       contador: 100,
+      modoNoche: false,
       modoOperacion: "ENTRADA BODEGA",
       filasBodega: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
       configFilas: {},
@@ -560,6 +585,25 @@
     let modoEdicionFilas = false;
     let scannerActivo = null;
     let ultimoLoteGenerado = [];
+
+    // --- MODO NOCHE (OSCURO) ---
+    function aplicarModoNoche() {
+      const activo = !!state.modoNoche;
+      document.body.classList.toggle('dark-mode', activo);
+      const btn = document.getElementById('btn-modo-noche');
+      if (btn) {
+        btn.innerText = activo ? '☀️ Día' : '🌙 Noche';
+      }
+    }
+
+    function toggleModoNoche() {
+      state.modoNoche = !state.modoNoche;
+      aplicarModoNoche();
+      guardarTodo();
+      if (document.getElementById('view-bodega').classList.contains('active')) renderizarBodega();
+      if (document.getElementById('view-mapa').classList.contains('active')) renderizarMapa();
+      if (document.getElementById('view-respaldo').classList.contains('active')) renderizarGestionFilas();
+    }
 
     // --- HELPERS DE VERSATILIDAD (RACK / PISO Y FIFO) ---
     function getConfigFila(nombreFila) {
@@ -614,6 +658,7 @@
           }
         });
       }
+      aplicarModoNoche();
       poblarSelectores();
       renderizarBodega();
       actualizarEstadisticas();
@@ -823,7 +868,7 @@
       cont.innerHTML = pallets.map(b => `
         <div class="etiqueta-brother">
           <h4 style="font-size: 0.95rem; margin-bottom: 4px;">${b.nombreMaterial}</h4>
-          <p style="font-size: 0.7rem; font-weight: bold; color: var(--secondary-text);">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
+          <p style="font-size: 0.7rem; font-weight: bold; color: #555;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
           <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
           <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 2px;">${b.serial}</p>
           <div style="display: flex; justify-content: space-between; border-top: 1px solid black; padding-top: 6px; font-weight: bold;">
@@ -951,7 +996,7 @@
                   <small style="color: var(--secondary-text); font-size: 0.7rem;">Siguientes en cola:</small>
                   <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
                     ${g.palletsEnStock.slice(1).map(p => `
-                      <div style="background: #f2f2f7; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
+                      <div style="background: var(--subbox-bg); border: 1px solid var(--border); padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
                         <b>${p.serial}</b> ${p.filaBodega} (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k
                       </div>
                     `).join('')}
@@ -966,7 +1011,7 @@
                     const pBolsa = p.pesoBolsa || 25;
                     const bls = Math.round(p.kilos / pBolsa);
                     return `
-                    <div style="background: white; border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                    <div style="background: var(--card); border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                       <div>
                         <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
                         <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</small>
@@ -983,7 +1028,7 @@
                         const pBolsa = p.pesoBolsa || 25;
                         const bls = Math.floor(p.kilos / pBolsa);
                         return `
-                        <div style="background: #eef4ff; border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                        <div style="background: var(--subbox-bg); border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                           <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</span>
                           <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas a N1</button>
                         </div>
@@ -1047,7 +1092,7 @@
         resumen.style.color = 'var(--red)';
         resumen.innerText = `⚠️ No hay suficientes bolsas (intentas sacar ${kilosSacar.toFixed(1)} kg y solo quedan ${bulto.kilos.toFixed(1)} kg).`;
       } else {
-        resumen.style.color = '#1b7a34';
+        resumen.style.color = 'var(--green)';
         resumen.innerText = `Se retirarán ${cantBolsas} bolsa(s) = ${kilosSacar.toFixed(1)} kg para Planta.\nQuedarán en el Nivel 1: ${saldoFinal.toFixed(1)} kg (~${Math.floor(saldoFinal / pesoBolsa)} bolsas).`;
       }
     }
@@ -1071,13 +1116,11 @@
         return;
       }
 
-      // Rebajar kilos del código que permanece en Nivel 1
       bulto.kilos = Math.max(0, bulto.kilos - kilosSacar);
       if (bulto.kilos === 0) {
         bulto.estado = "Consumido";
       }
 
-      // Registrar movimiento de retiro por bolsas
       state.movimientos.unshift({
         id: crypto.randomUUID(),
         fecha: new Date().toISOString(),
@@ -1088,7 +1131,6 @@
         detalle: `Operador retiró ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) desde ${bulto.filaBodega} (Nivel 1 - Pos ${bulto.posicionFila}). Motivo: ${motivo}. Saldo en piso: ${bulto.kilos.toFixed(1)} kg`
       });
 
-      // Crear el registro de esas bolsas en Tránsito/Planta
       state.contador++;
       const serialConsumo = `PLT-${String(state.contador).padStart(5, '0')}`;
       const bultoPlanta = {
@@ -1148,7 +1190,7 @@
         resumen.style.color = 'var(--red)';
         resumen.innerText = `⚠️ Excede el saldo del pallet (${bulto.kilos.toFixed(1)} kg / ${bolsasDisponibles} bolsas disponibles).`;
       } else {
-        resumen.style.color = '#1b7a34';
+        resumen.style.color = 'var(--green)';
         resumen.innerText = `Se bajarán ${cantBolsas} bolsa(s) = ${kilosBajar.toFixed(1)} kg a Nivel 1.\nQuedarán arriba en ${bulto.serial}: ${saldoRestante.toFixed(1)} kg (${Math.floor(saldoRestante / pesoBolsa)} bolsas).`;
       }
     }
@@ -1328,7 +1370,6 @@
           }
         }
 
-        // Descontar kilos del pallet madre en Nivel 2+
         const nivelOrigen = bulto.nivelApilado;
         const posOrigen = bulto.posicionFila;
         bulto.kilos = Math.max(0, bulto.kilos - kilosBajar);
@@ -1360,7 +1401,6 @@
           }
         }
 
-        // Crear un nuevo código de Picking en Nivel 1 con las bolsas bajadas
         state.contador++;
         const nuevoSerial = `BTO-${String(state.contador).padStart(5, '0')}`;
         const nuevoBultoN1 = {
@@ -1591,7 +1631,7 @@
                 const codB = palletsEnPos[1] || null;
                 celdasPosHtml += `
                   <div class="rack-pos-cell" style="border-color: rgba(52, 199, 89, 0.45); background: rgba(52, 199, 89, 0.04);">
-                    <small style="font-size: 0.65rem; font-weight: bold; color: #1b7a34; display: flex; justify-content: space-between;">
+                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--green); display: flex; justify-content: space-between;">
                       <span>Pos ${p}</span><span>(${palletsEnPos.length}/2 Cód)</span>
                     </small>
                     ${renderSlot(codA, 'Cód 1 (Picking)', false)}
@@ -1620,7 +1660,7 @@
 
             nivelesHtml += `
               <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
-                <small style="font-size: 0.7rem; color: ${n === 1 ? '#1b7a34' : 'var(--blue)'}; font-weight: bold;">
+                <small style="font-size: 0.7rem; color: ${n === 1 ? 'var(--green)' : 'var(--blue)'}; font-weight: bold;">
                   ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking: Se retira por bolsas y queda saldo)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
                 </small>
                 <div class="rack-level-row">
@@ -1683,7 +1723,7 @@
       const bls = Math.round(pallet.kilos / pBolsa);
 
       return `
-        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" style="${!esFIFO ? (esRet ? 'background: rgba(175, 82, 222, 0.15); color: var(--purple); border: 1px solid var(--purple);' : 'background: #e5e5ea; border: 1px solid var(--border);') : ''}" onclick="verDetallePallet('${pallet.serial}')">
+        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" style="${!esFIFO ? (esRet ? 'background: rgba(175, 82, 222, 0.15); color: var(--purple); border: 1px solid var(--purple);' : 'background: var(--slot-bg); border: 1px solid var(--border);') : ''}" onclick="verDetallePallet('${pallet.serial}')">
           <div style="display: flex; justify-content: space-between; font-weight: bold;">
             <span>${pallet.serial}</span>
             ${esFIFO ? '<span>⭐</span>' : ''}
@@ -1764,7 +1804,7 @@
           <p><b>Nivel:</b> Nivel ${b.nivelApilado} ${b.nivelApilado === 1 ? '(Piso / Picking Operadores)' : '(Altura / Reserva Encargado)'}</p>
           <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
           <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
-          <hr style="margin: 6px 0;">
+          <hr style="margin: 6px 0; border-color: var(--border);">
           <p><b>Composición:</b> Bolsas de ${pBolsa} kg (Saldo actual: ~${bls} bolsas)</p>
           <p><b>Kilos Actuales:</b> ${b.kilos.toFixed(1)} kg</p>
           <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
@@ -2076,7 +2116,7 @@
             <div>
               ${modoEdicionFilas ? `<button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, -1)">▲</button> <button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, 1)">▼</button>` : ''}
               <b>${f}</b>
-              <span style="font-size: 0.68rem; background: ${cfg.tipo === 'Rack' ? 'rgba(0,122,255,0.15)' : '#e5e5ea'}; color: ${cfg.tipo === 'Rack' ? 'var(--blue)' : 'black'}; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
+              <span style="font-size: 0.68rem; background: ${cfg.tipo === 'Rack' ? 'rgba(0,122,255,0.15)' : 'var(--btn-bordered-bg)'}; color: ${cfg.tipo === 'Rack' ? 'var(--blue)' : 'var(--text)'}; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
                 ${cfg.tipo === 'Rack' ? `Rack (${cfg.niveles}N x ${cfg.posicionesPorNivel}P)` : 'Piso (2 Niv)'}
               </span>
             </div>
@@ -2313,7 +2353,6 @@
           let actualizados = 0;
 
           filas.forEach(row => {
-            // Normalizar nombres de columnas (sin importar mayúsculas/minúsculas, tildes o espacios)
             const norm = {};
             Object.keys(row).forEach(k => {
               const cleanKey = k.trim().toLowerCase()
@@ -2342,7 +2381,6 @@
             const fifoRaw = String(norm.fifo || norm.usafifo || norm.controlfifo || "SI").trim().toUpperCase();
             const usaFIFO = !(fifoRaw === "NO" || fifoRaw === "FALSE" || fifoRaw === "0" || fifoRaw === "OFF" || fifoRaw === "DESACTIVADO");
 
-            // Si ya existe mismo código y mismo nombre, se actualiza; si no, se agrega al catálogo
             const existente = state.catalogo.find(c => c.codigo.toUpperCase() === codigo && c.nombre.toLowerCase() === nombre.toLowerCase());
 
             if (existente) {
@@ -2484,6 +2522,7 @@
               }
             });
           }
+          aplicarModoNoche();
           guardarTodo();
           poblarSelectores();
           renderizarBodega();
