@@ -156,6 +156,18 @@
       <button id="btn-crear-lote" class="btn btn-blue" style="width: 100%;" onclick="crearLote()" disabled>
         Completa los Datos para Crear
       </button>
+
+      <!-- CARGA MASIVA DE RECEPCIÓN DESDE EXCEL -->
+      <hr style="margin: 14px 0 10px 0; border: none; border-top: 1px solid var(--border);">
+      <h4 style="font-size: 0.9rem; margin-bottom: 6px;">Recepción Masiva por Excel</h4>
+      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaRecepcionExcel()">📥 Plantilla Recepción Excel</button>
+        <input type="file" id="file-import-recepcion-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarRecepcionExcel(event)">
+        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-recepcion-excel').click()">📤 Cargar Recepción Masiva</button>
+      </div>
+      <small style="display: block; color: var(--secondary-text); font-size: 0.68rem;">
+        Columnas Excel: <b>Codigo | Nombre | Lote | Fila | BolsasPorPallet | PesoPorBolsa | PesoTotalPallet | CantidadPallets</b>
+      </small>
     </div>
   </section>
 
@@ -821,7 +833,9 @@
 
     function crearLote() {
       const matIdx = document.getElementById('rec-material').value;
-      const mat = state.catalogo[matIdx];
+      const mat = state.catalogo[matIdx] || {};
+      const codigo = document.getElementById('rec-codigo').value.trim().toUpperCase();
+      const nombre = document.getElementById('rec-nombre').value.trim();
       const lote = document.getElementById('rec-lote').value.trim().toUpperCase();
       const fila = document.getElementById('rec-fila').value;
       const peso = parseFloat(document.getElementById('rec-peso').value);
@@ -836,8 +850,8 @@
         const bulto = {
           id: crypto.randomUUID(),
           serial: serial,
-          codigoMaterial: mat.codigo,
-          nombreMaterial: mat.nombre,
+          codigoMaterial: codigo || mat.codigo,
+          nombreMaterial: nombre || mat.nombre,
           kilos: peso,
           kilosIniciales: peso,
           bolsasPorPallet: bolsasPallet,
@@ -861,6 +875,161 @@
       renderizarEtiquetasBrother(nuevos);
       document.getElementById('rec-lote').value = "";
       validarFormularioCamion();
+    }
+
+    // --- CARGA MASIVA DE RECEPCIÓN DESDE EXCEL (.XLSX / .XLS / .CSV) ---
+    function descargarPlantillaRecepcionExcel() {
+      if (typeof XLSX === 'undefined') {
+        alert("La librería de Excel aún se está cargando. Revisa tu conexión e inténtalo de nuevo.");
+        return;
+      }
+      const filaEjemplo = (state.filasBodega && state.filasBodega[0]) ? state.filasBodega[0] : "Fila 1";
+      const datosEjemplo = [
+        {
+          Codigo: "RMGE00007",
+          Nombre: "Material - PA6 - Genérico - AZOTY",
+          Lote: "LOTE-A100",
+          Fila: filaEjemplo,
+          BolsasPorPallet: 1,
+          PesoPorBolsa: 1200,
+          PesoTotalPallet: 1200,
+          CantidadPallets: 10
+        },
+        {
+          Codigo: "RMGE00012",
+          Nombre: "Material - PA6 - 1030MB",
+          Lote: "LOTE-B200",
+          Fila: filaEjemplo,
+          BolsasPorPallet: 30,
+          PesoPorBolsa: 25,
+          PesoTotalPallet: 750,
+          CantidadPallets: 5
+        }
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(datosEjemplo);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Recepcion");
+      XLSX.writeFile(wb, "Plantilla_Recepcion_Masiva.xlsx");
+    }
+
+    function importarRecepcionExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const filas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (!filas || filas.length === 0) {
+            alert("El archivo Excel está vacío o no tiene filas válidas.");
+            event.target.value = "";
+            return;
+          }
+
+          const nuevosTotales = [];
+          let lotesProcesados = 0;
+          const filaPorDefecto = document.getElementById('rec-fila').value || state.filasBodega[0] || "Fila 1";
+
+          filas.forEach(row => {
+            const norm = {};
+            Object.keys(row).forEach(k => {
+              const cleanKey = k.trim().toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]/g, "");
+              norm[cleanKey] = row[k];
+            });
+
+            let codigo = String(norm.codigo || norm.cod || norm.codigomaterial || "").trim().toUpperCase();
+            let nombre = String(norm.nombre || norm.descripcion || norm.material || norm.nombrematerial || "").trim();
+            const lote = String(norm.lote || norm.loteproveedor || norm.nro_lote || "").trim().toUpperCase();
+
+            // Buscar coincidencia en el catálogo por código o por nombre para completar datos si vienen vacíos
+            const matCat = state.catalogo.find(c =>
+              (codigo && c.codigo.toUpperCase() === codigo) ||
+              (nombre && c.nombre.toLowerCase() === nombre.toLowerCase())
+            );
+
+            if (!codigo && matCat) codigo = matCat.codigo;
+            if (!nombre && matCat) nombre = matCat.nombre;
+
+            if (!codigo || !nombre || !lote) return;
+
+            let filaAsignada = String(norm.fila || norm.rack || norm.filabodega || norm.ubicacion || filaPorDefecto).trim();
+            if (!filaAsignada) filaAsignada = filaPorDefecto;
+
+            // Si la fila indicada en el Excel no existe aún (y no es Retornados), añadirla automáticamente
+            if (filaAsignada.toLowerCase() !== nombreFilaRetornados.toLowerCase() && !state.filasBodega.includes(filaAsignada)) {
+              state.filasBodega.push(filaAsignada);
+              getConfigFila(filaAsignada);
+            }
+
+            const bolsasPallet = Math.max(1, parseInt(norm.bolsasporpallet || norm.bolsas || norm.bultos || (matCat ? matCat.bolsasPorPallet : 1)) || 1);
+            const pesoBolsa = parseFloat(norm.pesoporbolsa || norm.pesobolsa || (matCat ? matCat.pesoBolsaDefault : 0)) || 0;
+            let pesoTotal = parseFloat(norm.pesototalpallet || norm.pesototal || norm.pesopallet || norm.peso || norm.kilos || 0) || 0;
+
+            if (pesoTotal <= 0 && pesoBolsa > 0) {
+              pesoTotal = bolsasPallet * pesoBolsa;
+            } else if (pesoTotal <= 0 && matCat) {
+              pesoTotal = matCat.pesoDefault;
+            }
+
+            const pesoBolsaFinal = pesoBolsa > 0 ? pesoBolsa : (pesoTotal > 0 ? (pesoTotal / bolsasPallet) : 25);
+            const pesoTotalFinal = pesoTotal > 0 ? pesoTotal : (bolsasPallet * pesoBolsaFinal);
+            const cantidadPallets = Math.max(1, parseInt(norm.cantidadpallets || norm.cantidad || norm.pallets || norm.cant || 1) || 1);
+
+            for (let i = 0; i < cantidadPallets; i++) {
+              state.contador++;
+              const serial = `BTO-${String(state.contador).padStart(5, '0')}`;
+              const bulto = {
+                id: crypto.randomUUID(),
+                serial: serial,
+                codigoMaterial: codigo,
+                nombreMaterial: nombre,
+                kilos: pesoTotalFinal,
+                kilosIniciales: pesoTotalFinal,
+                bolsasPorPallet: bolsasPallet,
+                pesoBolsa: pesoBolsaFinal,
+                tipoEmpaque: `${bolsasPallet} bls x ${pesoBolsaFinal}kg`,
+                lote: lote,
+                filaBodega: filaAsignada,
+                posicionFila: 1,
+                nivelApilado: 1,
+                subSlot: 1,
+                fechaCreacion: new Date().toISOString(),
+                fechaIngresoBodega: null,
+                estado: "Creado",
+                ajustadoEnTurno: false
+              };
+              state.bultos.push(bulto);
+              nuevosTotales.push(bulto);
+            }
+            lotesProcesados++;
+          });
+
+          if (nuevosTotales.length === 0) {
+            alert("No se encontraron filas válidas. Asegúrate de completar al menos Codigo (o Nombre), Lote y CantidadPallets.");
+            event.target.value = "";
+            return;
+          }
+
+          guardarTodo();
+          poblarSelectores();
+          ultimoLoteGenerado = nuevosTotales;
+          renderizarEtiquetasBrother(nuevosTotales);
+          alert(`✅ Recepción masiva completada:\n• Filas/Lotes procesados: ${lotesProcesados}\n• Total etiquetas/pallets generados: ${nuevosTotales.length}`);
+        } catch (err) {
+          console.error(err);
+          alert("Error al procesar el archivo Excel de recepción.");
+        }
+        event.target.value = "";
+      };
+      reader.readAsArrayBuffer(file);
     }
 
     function renderizarEtiquetasBrother(pallets) {
