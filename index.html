@@ -79,14 +79,21 @@
     /* Mapa de Bodega */
     .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
     .fila-col { min-width: 125px; background: rgba(128,128,128,0.08); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
-    .fila-col.rack-col { min-width: 300px; background: rgba(0, 122, 255, 0.06); border: 1.5px solid rgba(0, 122, 255, 0.3); }
+    .fila-col.rack-col { min-width: 320px; background: rgba(0, 122, 255, 0.06); border: 1.5px solid rgba(0, 122, 255, 0.3); }
     .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: var(--btn-bordered-bg); color: var(--text); border-radius: 8px; }
     .pos-box { background: var(--card); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
     .rack-level-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-    .rack-pos-cell { min-width: 125px; flex: 1; background: var(--subbox-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
+    .rack-pos-cell { min-width: 140px; flex: 1; background: var(--subbox-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
+    
+    /* Disposición HORIZONTAL en Piso N1 */
+    .rack-pos-cell-horizontal { min-width: 260px; }
+    .rack-pos-slots-horizontal { display: flex; flex-direction: row; gap: 6px; width: 100%; }
+    .rack-pos-slots-horizontal .pallet-slot { flex: 1; min-width: 120px; }
+
     .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; color: var(--text); }
     .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
-    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
+    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
+    .pallet-slot.fixed-station { border: 1.5px solid var(--green); background: rgba(52, 199, 89, 0.1); }
 
     /* Modales */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
@@ -216,7 +223,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
       <div style="display: flex; gap: 8px; font-size: 0.7rem; flex-wrap: wrap;">
         <span><b style="color: var(--orange);">⭐ Prioritario</b></span>
-        <span><b style="color: var(--green);">■ N1 Picking (2 Cód/Pos)</b></span>
+        <span><b style="color: var(--green);">■ N1 Piso (Horizontal: 2 Cód Fijos x Pos)</b></span>
         <span><b style="color: var(--blue);">■ N2+ Reserva (Encargado)</b></span>
       </div>
       <button class="btn btn-blue" style="font-size: 0.75rem; padding: 6px 10px;" onclick="compactarPosiciones()">Compactar Pasillos</button>
@@ -343,6 +350,28 @@
     </div>
   </div>
 
+  <!-- MODAL ASIGNAR CÓDIGO ÚNICO FIJO EN NIVEL 1 -->
+  <div id="modal-crear-slot-fijo" class="modal">
+    <div class="modal-content">
+      <h3 style="color: var(--green);">Asignar Código Fijo de Piso (Nivel 1)</h3>
+      <p id="slot-fijo-ubicacion-txt" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <input type="hidden" id="slot-fijo-fila">
+      <input type="hidden" id="slot-fijo-pos">
+      <input type="hidden" id="slot-fijo-subslot">
+
+      <label style="font-size: 0.8rem; font-weight: bold;">Código Único Fijo Permanente:</label>
+      <input type="text" id="slot-fijo-codigo-custom" placeholder="Ej: PK-R1-P1A o CÓDIGO PROPIO...">
+
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Material que albergará este puesto (Opcional):</label>
+      <select id="slot-fijo-material-select"></select>
+
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-crear-slot-fijo')">Cancelar</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="guardarCodigoFijoSlot()">Asignar y Crear</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL RETIRO / CONSUMO DE BOLSAS EN NIVEL 1 DE RACK (OPERADORES Y ENCARGADO) -->
   <div id="modal-consumo-bolsas-n1" class="modal">
     <div class="modal-content">
@@ -417,7 +446,7 @@
 
           <p id="resumen-porcionado-kilos" style="font-size: 0.8rem; font-weight: bold; color: var(--green); margin-bottom: 8px;"></p>
 
-          <label style="font-size: 0.78rem; font-weight: bold;">Destino de las bolsas en la Posición elegida (Nivel 1):</label>
+          <label style="font-size: 0.78rem; font-weight: bold;">Código Destino en el Nivel 1:</label>
           <select id="abast-destino-codigo" style="margin-bottom: 4px;"></select>
         </div>
       </div>
@@ -432,7 +461,7 @@
       <select id="rack-sel-posicion" onchange="actualizarOpcionesDestinoPorcionado()"></select>
 
       <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: var(--green); padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
-        ℹ️ <b>Nivel 1 (A Piso - Picking):</b> Permite almacenar hasta <b>2 códigos por posición</b> para extracción directa de operadores.
+        ℹ️ <b>Nivel 1 (A Piso):</b> Estructura horizontal con <b>2 códigos fijos por posición</b> (lado a lado) para flujo continuo de recepción y picking.
       </div>
 
       <div style="display: flex; gap: 8px;">
@@ -705,7 +734,7 @@
     }
 
     function actualizarEstadisticas() {
-      const enStock = state.bultos.filter(b => b.estado === 'En Stock');
+      const enStock = state.bultos.filter(b => b.estado === 'En Stock' && b.kilos > 0);
       const totalKilos = enStock.reduce((acc, b) => acc + b.kilos, 0);
       document.getElementById('bultos-stock-count').innerText = enStock.length;
       document.getElementById('bultos-stock-kilos').innerText = `${totalKilos.toFixed(1)} kg`;
@@ -741,7 +770,7 @@
     }
 
     function obtenerListasFIFOPorComponente() {
-      const enStock = state.bultos.filter(b => b.estado === 'En Stock');
+      const enStock = state.bultos.filter(b => b.estado === 'En Stock' && b.kilos > 0);
       const agrupados = {};
       enStock.forEach(b => {
         if (!agrupados[b.nombreMaterial]) agrupados[b.nombreMaterial] = [];
@@ -949,7 +978,6 @@
             let nombre = String(norm.nombre || norm.descripcion || norm.material || norm.nombrematerial || "").trim();
             const lote = String(norm.lote || norm.loteproveedor || norm.nro_lote || "").trim().toUpperCase();
 
-            // Buscar coincidencia en el catálogo por código o por nombre para completar datos si vienen vacíos
             const matCat = state.catalogo.find(c =>
               (codigo && c.codigo.toUpperCase() === codigo) ||
               (nombre && c.nombre.toLowerCase() === nombre.toLowerCase())
@@ -963,7 +991,6 @@
             let filaAsignada = String(norm.fila || norm.rack || norm.filabodega || norm.ubicacion || filaPorDefecto).trim();
             if (!filaAsignada) filaAsignada = filaPorDefecto;
 
-            // Si la fila indicada en el Excel no existe aún (y no es Retornados), añadirla automáticamente
             if (filaAsignada.toLowerCase() !== nombreFilaRetornados.toLowerCase() && !state.filasBodega.includes(filaAsignada)) {
               state.filasBodega.push(filaAsignada);
               getConfigFila(filaAsignada);
@@ -1106,6 +1133,73 @@
       doc.save(`Etiquetas_${nombreLote}_62mm.pdf`);
     }
 
+    // --- GESTIÓN DE CÓDIGO ÚNICO FIJO EN NIVEL 1 ---
+    function abrirModalCrearSlotFijo(fila, pos, subSlot) {
+      document.getElementById('slot-fijo-fila').value = fila;
+      document.getElementById('slot-fijo-pos').value = pos;
+      document.getElementById('slot-fijo-subslot').value = subSlot;
+
+      const subSlotLetra = (subSlot === 1) ? 'A' : 'B';
+      document.getElementById('slot-fijo-ubicacion-txt').innerText = `${fila} • Nivel 1 (Piso) • Posición ${pos} — Slot ${subSlotLetra}`;
+
+      const selMat = document.getElementById('slot-fijo-material-select');
+      selMat.innerHTML = `<option value="">(Sin asignar material previo / Abierto)</option>` + 
+        state.catalogo.map(c => `<option value="${c.nombre}">${c.nombre} (${c.codigo})</option>`).join('');
+
+      document.getElementById('slot-fijo-codigo-custom').value = `PICK-${fila.replace(/\s+/g, '')}-P${pos}${subSlotLetra}`;
+      abrirModal('modal-crear-slot-fijo');
+    }
+
+    function guardarCodigoFijoSlot() {
+      const fila = document.getElementById('slot-fijo-fila').value;
+      const pos = parseInt(document.getElementById('slot-fijo-pos').value) || 1;
+      const subSlot = parseInt(document.getElementById('slot-fijo-subslot').value) || 1;
+      let codigo = document.getElementById('slot-fijo-codigo-custom').value.trim().toUpperCase();
+      const matNombre = document.getElementById('slot-fijo-material-select').value;
+
+      if (!codigo) {
+        alert("Debes ingresar un código identificador único para este puesto de picking.");
+        return;
+      }
+
+      // Validar si el código ya existe
+      const yaExiste = state.bultos.find(b => b.serial === codigo);
+      if (yaExiste) {
+        alert(`El código '${codigo}' ya está asignado a otro bulto o estación.`);
+        return;
+      }
+
+      const matCat = matNombre ? obtenerMaterialPorNombre(matNombre) : null;
+      const nuevoSlotFijo = {
+        id: crypto.randomUUID(),
+        serial: codigo,
+        codigoMaterial: matCat ? matCat.codigo : "PICKING",
+        nombreMaterial: matNombre || "Estación de Picking Fija",
+        kilos: 0,
+        kilosIniciales: 0,
+        bolsasPorPallet: matCat ? matCat.bolsasPorPallet : 4,
+        pesoBolsa: matCat ? matCat.pesoBolsaDefault : 25,
+        tipoEmpaque: "Estación Fija Picking",
+        lote: "N1-FIJO",
+        filaBodega: fila,
+        posicionFila: pos,
+        nivelApilado: 1,
+        subSlot: subSlot,
+        esSlotFijoN1: true,
+        fechaCreacion: new Date().toISOString(),
+        fechaIngresoBodega: new Date().toISOString(),
+        estado: "En Stock",
+        ajustadoEnTurno: false
+      };
+
+      state.bultos.push(nuevoSlotFijo);
+      guardarTodo();
+      cerrarModal('modal-crear-slot-fijo');
+      renderizarMapa();
+      renderizarBodega();
+      alert(`✅ Puesto Nivel 1 asignado exitosamente con Código Fijo: ${codigo}`);
+    }
+
     // --- BODEGA Y FIFO ---
     function setModoOperacion(modo) {
       state.modoOperacion = modo;
@@ -1174,7 +1268,7 @@
               ` : ''}
             ` : `
               <div style="background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.25); border-radius: 8px; padding: 8px; margin-top: 8px;">
-                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (OPERADORES) — Retiro por Bolsas:</small>
+                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (PISO) — Retiro por Bolsas:</small>
                 <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 6px;">
                   ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => {
                     const pBolsa = p.pesoBolsa || 25;
@@ -1227,6 +1321,11 @@
     function abrirModalConsumoBolsasN1(serial) {
       const bulto = state.bultos.find(b => b.serial === serial);
       if (!bulto) return;
+
+      if (bulto.kilos <= 0) {
+        alert(`La estación ${bulto.serial} se encuentra actualmente vacía (0 kg). El encargado debe abastecerla desde el Nivel 2+ antes de retirar bolsas.`);
+        return;
+      }
 
       const pBolsa = bulto.pesoBolsa || (obtenerMaterialPorNombre(bulto.nombreMaterial)?.pesoBolsaDefault) || 25;
       document.getElementById('consumo-n1-serial').value = serial;
@@ -1285,10 +1384,9 @@
         return;
       }
 
+      // Rebajar kilos del código que permanece en Nivel 1.
+      // Si llega a 0 kg, PERMANECE en Nivel 1 como puesto único y fijo
       bulto.kilos = Math.max(0, bulto.kilos - kilosSacar);
-      if (bulto.kilos === 0) {
-        bulto.estado = "Consumido";
-      }
 
       state.movimientos.unshift({
         id: crypto.randomUUID(),
@@ -1328,7 +1426,7 @@
       renderizarBodega();
       renderizarMapa();
       renderizarProduccion();
-      alert(`Retiro exitoso: ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) enviadas a Planta.\nSaldo restante en Nivel 1: ${bulto.kilos.toFixed(1)} kg.`);
+      alert(`Retiro exitoso: ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) enviadas a Planta.\nSaldo restante en código fijo ${bulto.serial}: ${bulto.kilos.toFixed(1)} kg.`);
     }
 
     // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO PORCIONADO EN RACK ---
@@ -1373,7 +1471,7 @@
       const serialMadre = document.getElementById('rack-sel-serial').value;
       const bultoMadre = state.bultos.find(b => b.serial === serialMadre);
 
-      const codigosEnPosN1 = state.bultos.filter(b =>
+      const puestosN1 = state.bultos.filter(b =>
         b.filaBodega === fila &&
         b.estado === 'En Stock' &&
         b.nivelApilado === 1 &&
@@ -1381,13 +1479,15 @@
       );
 
       const selDestino = document.getElementById('abast-destino-codigo');
-      let html = `<option value="NUEVO">➕ Crear nuevo código de Picking en Pos ${pos} (${codigosEnPosN1.length}/2 ocupados)</option>`;
+      let html = "";
 
-      codigosEnPosN1.forEach(c => {
-        if (!bultoMadre || c.nombreMaterial === bultoMadre.nombreMaterial) {
-          html += `<option value="${c.serial}">📦 Sumar bolsas al código existente ${c.serial} (Tiene ${c.kilos.toFixed(0)} kg)</option>`;
-        }
-      });
+      if (puestosN1.length > 0) {
+        puestosN1.forEach(c => {
+          html += `<option value="${c.serial}">📦 Cargar en código fijo ${c.serial} (Saldo actual: ${c.kilos.toFixed(0)} kg)</option>`;
+        });
+      } else {
+        html = `<option value="NUEVO">➕ Crear código único de puesto en Pos ${pos}</option>`;
+      }
 
       selDestino.innerHTML = html;
     }
@@ -1440,11 +1540,11 @@
       let opcionesNiv = "";
 
       if (modo === 'ABASTECER_N1') {
-        opcionesNiv = `<option value="1" selected>Nivel 1 (A Piso - Picking Operadores - 2 Cód/Pos)</option>`;
+        opcionesNiv = `<option value="1" selected>Nivel 1 (A Piso - Picking Operadores - Horizontal 2 Cód/Pos)</option>`;
       } else {
         for (let n = 1; n <= maxNiveles; n++) {
           const desc = (cfg.tipo === 'Rack')
-            ? (n === 1 ? 'Nivel 1 (A Piso - Picking 2 Cód/Pos)' : `Nivel ${n} (Altura - Reserva Encargado)`)
+            ? (n === 1 ? 'Nivel 1 (A Piso - Horizontal 2 Cód/Pos)' : `Nivel ${n} (Altura - Reserva Encargado)`)
             : (n === 1 ? 'Nivel 1 (Piso)' : 'Nivel 2 (Arriba)');
           opcionesNiv += `<option value="${n}">${desc}</option>`;
         }
@@ -1483,7 +1583,7 @@
 
         let estadoTexto = "";
         if (capacidadPorPosicion === 2) {
-          estadoTexto = `(${cant}/2 códigos${cant > 0 ? ': ' + nombresOcupantes : ' - Libre'})`;
+          estadoTexto = `(${cant}/2 puestos${cant > 0 ? ': ' + nombresOcupantes : ' - Disponibles'})`;
         } else {
           estadoTexto = cant === 0 ? '(Libre)' : `(Ocupado por ${nombresOcupantes})`;
         }
@@ -1517,7 +1617,7 @@
         b.serial !== serial
       );
 
-      // LÓGICA DE ABASTECIMIENTO PORCIONADO (BOLSAS) DESDE NIVEL 2+ A NIVEL 1
+      // ABASTECIMIENTO PORCIONADO (BOLSAS) A CÓDIGO FIJO DEL NIVEL 1
       if (modo === 'ABASTECER_N1' && document.getElementById('abast-modalidad').value === 'PORCIONADO') {
         const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || (bulto.pesoBolsa || 25);
         const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
@@ -1533,12 +1633,6 @@
           return;
         }
 
-        if (destinoCodigo === 'NUEVO' && ocupantes.length >= capacidadMax) {
-          if (!confirm(`⚠️ La Posición ${posDestino} del Nivel 1 ya tiene ${ocupantes.length}/2 códigos ocupados.\n¿Deseas crear igualmente un código nuevo en esta posición?`)) {
-            return;
-          }
-        }
-
         const nivelOrigen = bulto.nivelApilado;
         const posOrigen = bulto.posicionFila;
         bulto.kilos = Math.max(0, bulto.kilos - kilosBajar);
@@ -1546,11 +1640,16 @@
           bulto.estado = "Consumido";
         }
 
-        if (destinoCodigo !== 'NUEVO') {
+        if (destinoCodigo && destinoCodigo !== 'NUEVO') {
+          // Cargar sobre el código único y fijo existente en N1
           const codExistente = state.bultos.find(b => b.serial === destinoCodigo);
           if (codExistente) {
             codExistente.kilos += kilosBajar;
+            codExistente.codigoMaterial = bulto.codigoMaterial;
+            codExistente.nombreMaterial = bulto.nombreMaterial;
+            codExistente.lote = bulto.lote;
             codExistente.pesoBolsa = pesoBolsa;
+
             state.movimientos.unshift({
               id: crypto.randomUUID(),
               fecha: new Date().toISOString(),
@@ -1558,65 +1657,28 @@
               nombreMaterial: codExistente.nombreMaterial,
               kilos: kilosBajar,
               tipo: "ABASTECIMIENTO PORCIONADO (N2+ ➔ N1)",
-              detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) recargando el código ${codExistente.serial} en Nivel 1 (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
+              detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) cargando el código fijo de N1 ${codExistente.serial} (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
             });
+
             guardarTodo();
             cerrarModal('modal-ubicacion-rack');
             cerrarModal('modal-pallet-mapa');
             renderizarBodega();
             renderizarMapa();
-            alert(`¡Abastecimiento exitoso!\nSe bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) al código ${codExistente.serial} en Nivel 1 (Pos ${posDestino}).`);
+            alert(`¡Abastecimiento exitoso!\nSe cargaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) en el código fijo ${codExistente.serial} (Nivel 1, Posición ${posDestino}).`);
             return;
           }
         }
 
-        state.contador++;
-        const nuevoSerial = `BTO-${String(state.contador).padStart(5, '0')}`;
-        const nuevoBultoN1 = {
-          id: crypto.randomUUID(),
-          serial: nuevoSerial,
-          codigoMaterial: bulto.codigoMaterial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: kilosBajar,
-          kilosIniciales: kilosBajar,
-          bolsasPorPallet: cantBolsas,
-          pesoBolsa: pesoBolsa,
-          tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
-          lote: bulto.lote,
-          filaBodega: filaDestino,
-          posicionFila: posDestino,
-          nivelApilado: 1,
-          subSlot: ocupantes.length + 1,
-          fechaCreacion: new Date().toISOString(),
-          fechaIngresoBodega: bulto.fechaIngresoBodega || new Date().toISOString(),
-          estado: "En Stock",
-          ajustadoEnTurno: false
-        };
-        state.bultos.push(nuevoBultoN1);
-
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: nuevoBultoN1.serial,
-          nombreMaterial: nuevoBultoN1.nombreMaterial,
-          kilos: kilosBajar,
-          tipo: "ABASTECIMIENTO PORCIONADO (N2+ ➔ N1)",
-          detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) creando ${nuevoBultoN1.serial} en Nivel 1 (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
-        });
-
-        guardarTodo();
-        cerrarModal('modal-ubicacion-rack');
-        cerrarModal('modal-pallet-mapa');
-        renderizarBodega();
-        renderizarMapa();
-        ultimoLoteGenerado = [nuevoBultoN1];
-        renderizarEtiquetasBrother([nuevoBultoN1]);
+        // Si no existía código fijo en este puesto, pedir definirlo
+        const subSlotLibre = (ocupantes.length === 0) ? 1 : 2;
+        abrirModalCrearSlotFijo(filaDestino, posDestino, subSlotLibre);
         return;
       }
 
-      // MOVIMIENTO / ENTRADA DE PALLET COMPLETO
+      // ENTRADA O MOVIMIENTO DE PALLET COMPLETO
       if (ocupantes.length >= capacidadMax) {
-        if (!confirm(`⚠️ La Posición ${posDestino} del Nivel ${nivelDestino} ya tiene ${ocupantes.length}/${capacidadMax} código(s) (${ocupantes.map(x => x.serial).join(', ')}).\n¿Deseas asignarlo ahí de todas formas?`)) {
+        if (!confirm(`⚠️ La Posición ${posDestino} del Nivel ${nivelDestino} ya tiene ${ocupantes.length}/${capacidadMax} código(s) asignado(s).\n¿Deseas ubicarlo igualmente aquí?`)) {
           return;
         }
       }
@@ -1638,7 +1700,7 @@
           nombreMaterial: bulto.nombreMaterial,
           kilos: bulto.kilos,
           tipo: "ENTRADA BODEGA (RACK)",
-          detalle: `Ingreso a ${bulto.filaBodega} -> Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila} (${bulto.nivelApilado === 1 ? 'Picking Piso' : 'Reserva Altura'}) (+ ${bulto.kilos.toFixed(1)} kg)`
+          detalle: `Ingreso a ${bulto.filaBodega} -> Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila} (${bulto.nivelApilado === 1 ? 'Piso' : 'Reserva Altura'}) (+ ${bulto.kilos.toFixed(1)} kg)`
         });
       } else if (modo === 'ABASTECER_N1') {
         state.movimientos.unshift({
@@ -1648,7 +1710,7 @@
           nombreMaterial: bulto.nombreMaterial,
           kilos: bulto.kilos,
           tipo: "ABASTECIMIENTO ENCARGADO (N2+ ➔ N1)",
-          detalle: `Pallet completo bajado por encargado desde ${ubicacionAnterior} hacia Nivel 1 Picking (Pos ${bulto.posicionFila})`
+          detalle: `Pallet completo bajado por encargado desde ${ubicacionAnterior} hacia Nivel 1 (Pos ${bulto.posicionFila})`
         });
       } else {
         state.movimientos.unshift({
@@ -1706,7 +1768,7 @@
 
       } else {
         if (bulto.estado === "En Tránsito") { alert(`El bulto ${bulto.serial} ya se encuentra despachado en Tránsito.`); return; }
-        if (bulto.estado === "Consumido") { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
+        if (bulto.estado === "Consumido" && !bulto.esSlotFijoN1) { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
         if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
 
         const cfg = getConfigFila(bulto.filaBodega);
@@ -1730,7 +1792,7 @@
         const usaFIFO = materialUsaFIFO(bulto.nombreMaterial);
 
         if (usaFIFO && !forzarSinFIFO) {
-          const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock').sort(compararFIFO);
+          const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock' && b.kilos > 0).sort(compararFIFO);
           if (mismoMaterial.length > 0 && mismoMaterial[0].serial !== bulto.serial) {
             const masAntiguo = mismoMaterial[0];
             const msg = `⚠️ Advertencia de Quiebre FIFO\n\nPara '${bulto.nombreMaterial}', el pallet prioritario está en [${masAntiguo.filaBodega}] Nivel ${masAntiguo.nivelApilado} - Posición ${masAntiguo.posicionFila}: ${masAntiguo.serial} (Lote: ${masAntiguo.lote}).\n\n¿Deseas forzar el despacho fuera de regla?`;
@@ -1796,18 +1858,23 @@
               const palletsEnPos = palletsFila.filter(b => b.nivelApilado === n && b.posicionFila === p);
 
               if (n === 1) {
-                const codA = palletsEnPos[0] || null;
-                const codB = palletsEnPos[1] || null;
+                // NIVEL 1 (A PISO): DISPOSICIÓN HORIZONTAL (LADO A LADO) CON 2 CÓDIGOS ÚNICOS FIJOS
+                const codA = palletsEnPos.find(b => b.subSlot === 1) || palletsEnPos[0] || null;
+                const codB = palletsEnPos.find(b => b.subSlot === 2 && b !== codA) || (palletsEnPos.length > 1 ? palletsEnPos[1] : null);
+
                 celdasPosHtml += `
-                  <div class="rack-pos-cell" style="border-color: rgba(52, 199, 89, 0.45); background: rgba(52, 199, 89, 0.04);">
-                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--green); display: flex; justify-content: space-between;">
-                      <span>Pos ${p}</span><span>(${palletsEnPos.length}/2 Cód)</span>
+                  <div class="rack-pos-cell rack-pos-cell-horizontal" style="border-color: rgba(52, 199, 89, 0.5); background: rgba(52, 199, 89, 0.04);">
+                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--green); display: flex; justify-content: space-between; margin-bottom: 2px;">
+                      <span>Posición ${p} (Piso)</span><span>Horizontal (Slot A y B)</span>
                     </small>
-                    ${renderSlot(codA, 'Cód 1 (Picking)', false)}
-                    ${renderSlot(codB, 'Cód 2 (Picking)', false)}
+                    <div class="rack-pos-slots-horizontal">
+                      ${renderSlotNivel1Fijo(codA, fila, p, 1, 'Slot A')}
+                      ${renderSlotNivel1Fijo(codB, fila, p, 2, 'Slot B')}
+                    </div>
                   </div>
                 `;
               } else {
+                // NIVEL 2+: RESERVA ENCARGADO
                 const palletRes = palletsEnPos[0] || null;
                 const pBolsa = palletRes ? (palletRes.pesoBolsa || 25) : 25;
                 const bls = palletRes ? Math.floor(palletRes.kilos / pBolsa) : 0;
@@ -1818,7 +1885,7 @@
                     </small>
                     ${renderSlot(palletRes, `Vacío (Pos ${p})`, false)}
                     ${palletRes ? `
-                      <button class="btn btn-blue" style="font-size: 0.65rem; padding: 3px 6px; width: 100%;" onclick="abrirModalUbicacionRack('${palletRes.serial}', 'ABASTECER_N1')">
+                      <button class="btn btn-blue" style="font-size: 0.65rem; padding: 3px 6px; width: 100%; margin-top: 2px;" onclick="abrirModalUbicacionRack('${palletRes.serial}', 'ABASTECER_N1')">
                         ⬇️ Bajar Bolsas a N1
                       </button>
                     ` : ''}
@@ -1830,7 +1897,7 @@
             nivelesHtml += `
               <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
                 <small style="font-size: 0.7rem; color: ${n === 1 ? 'var(--green)' : 'var(--blue)'}; font-weight: bold;">
-                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Picking: Se retira por bolsas y queda saldo)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
+                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Horizontal: Códigos Fijos de Picking A y B)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
                 </small>
                 <div class="rack-level-row">
                   ${celdasPosHtml}
@@ -1843,7 +1910,7 @@
             <div class="fila-col rack-col">
               <div class="fila-header" style="background: rgba(0, 122, 255, 0.15); color: var(--blue);">
                 🗄️ ${fila} (RACK)<br>
-                <small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} cód/pallets • ${maxNivelRack} Niveles x ${posPorNivel} Pos</small>
+                <small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} puestos/pallets • ${maxNivelRack} Niveles x ${posPorNivel} Pos</small>
               </div>
               ${nivelesHtml}
             </div>
@@ -1885,6 +1952,36 @@
       }).join('');
     }
 
+    function renderSlotNivel1Fijo(pallet, fila, pos, subSlot, labelSlot) {
+      if (!pallet) {
+        return `
+          <div class="pallet-slot empty" style="border: 1.2px dashed var(--green); color: var(--green); cursor: pointer;" onclick="abrirModalCrearSlotFijo('${fila}', ${pos}, ${subSlot})">
+            + Asignar Cód (${labelSlot})
+          </div>
+        `;
+      }
+
+      const pBolsa = pallet.pesoBolsa || 25;
+      const bls = Math.round(pallet.kilos / pBolsa);
+      const vacio = pallet.kilos <= 0;
+
+      return `
+        <div class="pallet-slot fixed-station" style="${vacio ? 'opacity: 0.7; border-style: dashed;' : ''}" onclick="verDetallePallet('${pallet.serial}')">
+          <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <span style="color: var(--blue); font-size: 0.72rem;">${pallet.serial}</span>
+            <small style="font-size: 0.62rem; color: var(--green);">${labelSlot}</small>
+          </div>
+          <div style="font-size: 0.62rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+            ${pallet.nombreMaterial || 'Estación Picking'}
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
+            <span>${vacio ? 'Disponible' : pallet.lote}</span>
+            <b style="color: ${vacio ? 'var(--secondary-text)' : 'var(--green)'};">${pallet.kilos.toFixed(0)}k (${bls}b)</b>
+          </div>
+        </div>
+      `;
+    }
+
     function renderSlot(pallet, nivelTexto, esRet) {
       if (!pallet) return `<div class="pallet-slot empty">Vacío (${nivelTexto})</div>`;
       const esFIFO = esPalletFIFOPrioritario(pallet.serial);
@@ -1914,7 +2011,7 @@
         const cfg = getConfigFila(fila);
         if (fila !== nombreFilaRetornados && cfg.tipo === "Rack") return;
 
-        const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock')
+        const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock' && b.kilos > 0)
           .sort((a, b) => (a.posicionFila - b.posicionFila) || (a.nivelApilado - b.nivelApilado));
 
         let posActual = 1;
@@ -1955,7 +2052,7 @@
       contEtiqueta.innerHTML = `
         <div class="etiqueta-brother" style="width: 100%; margin: 0 0 10px 0;">
           <h4>${b.nombreMaterial}</h4>
-          <p style="font-size: 0.7rem;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
+          <p style="font-size: 0.7rem; font-weight: bold; color: #555;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
           <svg id="svg-det-${b.serial}" style="width: 100%; height: 55px;"></svg>
           <p style="font-family: monospace; font-weight: 900;">${b.serial}</p>
         </div>
@@ -1970,7 +2067,7 @@
       document.getElementById('render-datos-detalle').innerHTML = `
         <div class="card" style="margin: 0; font-size: 0.8rem;">
           <p><b>Sector / Fila:</b> ${b.filaBodega} (${cfg.tipo})</p>
-          <p><b>Nivel:</b> Nivel ${b.nivelApilado} ${b.nivelApilado === 1 ? '(Piso / Picking Operadores)' : '(Altura / Reserva Encargado)'}</p>
+          <p><b>Nivel:</b> Nivel ${b.nivelApilado} ${b.nivelApilado === 1 ? `(Piso - Código Fijo Slot ${b.subSlot === 1 ? 'A' : 'B'})` : '(Altura / Reserva Encargado)'}</p>
           <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
           <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
           <hr style="margin: 6px 0; border-color: var(--border);">
@@ -1988,7 +2085,9 @@
         } else {
           btns += `<button class="btn btn-green" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); abrirModalConsumoBolsasN1('${b.serial}');">📤 Retirar Bolsas para Producción (Picking)</button>`;
         }
-        btns += `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Nivel / Posición en Rack</button>`;
+        if (!b.esSlotFijoN1) {
+          btns += `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Nivel / Posición en Rack</button>`;
+        }
         contAcciones.innerHTML = btns;
       } else {
         contAcciones.innerHTML = `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Ubicación</button>`;
@@ -2045,7 +2144,7 @@
       if (dif !== 0) {
         bulto.kilos = Math.max(0, nuevos);
         bulto.ajustadoEnTurno = true;
-        if (bulto.kilos === 0) bulto.estado = "Consumido";
+        if (bulto.kilos === 0 && !bulto.esSlotFijoN1) bulto.estado = "Consumido";
 
         state.movimientos.unshift({
           id: crypto.randomUUID(),
@@ -2088,7 +2187,7 @@
 
       bulto.kilos = Math.max(0, bulto.kilos - descontar);
       bulto.ajustadoEnTurno = true;
-      if (bulto.kilos === 0) bulto.estado = "Consumido";
+      if (bulto.kilos === 0 && !bulto.esSlotFijoN1) bulto.estado = "Consumido";
 
       state.movimientos.unshift({
         id: crypto.randomUUID(),
@@ -2278,7 +2377,7 @@
     function renderizarGestionFilas() {
       const cont = document.getElementById('lista-filas-gestion');
       cont.innerHTML = state.filasBodega.map((f, i) => {
-        const count = state.bultos.filter(b => b.filaBodega === f && b.estado === 'En Stock').length;
+        const count = state.bultos.filter(b => b.filaBodega === f && b.estado === 'En Stock' && b.kilos > 0).length;
         const cfg = getConfigFila(f);
         return `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
@@ -2352,7 +2451,7 @@
     }
 
     function eliminarFila(nombre) {
-      const count = state.bultos.filter(b => b.filaBodega === nombre && b.estado === 'En Stock').length;
+      const count = state.bultos.filter(b => b.filaBodega === nombre && b.estado === 'En Stock' && b.kilos > 0).length;
       if (count > 0) { alert(`No se puede eliminar '${nombre}' porque contiene ${count} pallets en stock.`); return; }
       state.filasBodega = state.filasBodega.filter(f => f !== nombre);
       if (state.configFilas && state.configFilas[nombre]) delete state.configFilas[nombre];
