@@ -3,771 +3,253 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#2563eb">
   <link rel="manifest" href="./manifest.json">
-  <title>Bodega MP / Colorantes</title>
-
-  <!-- Librerías para Código 128, Generación Directa de PDF, Escáner de Cámara y Excel -->
+  <title>Control Bodega MP</title>
+  
+  <!-- Librería para código de barras y cámara -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
-      --bg: #f2f2f7;
+      --primary: #2563eb;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --purple: #9333ea;
+      --bg: #f8fafc;
       --card: #ffffff;
-      --text: #000000;
-      --secondary-text: #8e8e93;
-      --border: #d1d1d6;
-      --blue: #007aff;
-      --green: #34c759;
-      --orange: #ff9500;
-      --purple: #af52de;
-      --red: #ff3b30;
-      --gray: #8e8e93;
-      --input-bg: #ffffff;
-      --tabbar-bg: #f2f2f7;
-      --btn-bordered-bg: #e5e5ea;
-      --btn-bordered-text: #000000;
-      --slot-bg: #e5e5ea;
-      --subbox-bg: #f9f9fb;
+      --text: #0f172a;
+      --border: #e2e8f0;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 70px; user-select: none; }
 
-    body.dark-mode {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #f8fafc;
-      --secondary-text: #94a3b8;
-      --border: #334155;
-      --input-bg: #0f172a;
-      --tabbar-bg: #1e293b;
-      --btn-bordered-bg: #334155;
-      --btn-bordered-text: #f8fafc;
-      --slot-bg: #334155;
-      --subbox-bg: #0f172a;
-    }
+    /* Barra Superior */
+    header { background: #0f172a; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.1rem; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding-bottom: 75px; user-select: none; transition: background 0.2s, color 0.2s; }
-
-    header { background: #1c1c1e; color: white; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 8px; }
-    header h1 { font-size: 1.05rem; }
-
-    .view-section { display: none; padding: 12px; }
+    /* Contenedores de Vistas */
+    .view-section { display: none; padding: 14px; }
     .view-section.active { display: block; }
 
+    /* Tarjetas */
     .card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 14px; margin-bottom: 12px; }
-    .btn { padding: 8px 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.85rem; }
-    .btn-blue { background: var(--blue); color: white; }
-    .btn-green { background: var(--green); color: white; }
-    .btn-orange { background: var(--orange); color: white; }
+    .btn { padding: 10px 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-warning { background: var(--warning); color: white; }
     .btn-purple { background: var(--purple); color: white; }
-    .btn-red { background: var(--red); color: white; }
-    .btn-bordered { background: var(--btn-bordered-bg); color: var(--btn-bordered-text); }
+    .btn-danger { background: #dc2626; color: white; }
 
-    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; margin-top: 4px; margin-bottom: 10px; background: var(--input-bg); color: var(--text); }
+    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; margin-top: 4px; margin-bottom: 10px; }
 
-    /* Barra inferior */
-    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: var(--tabbar-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-    .tab-item { flex: 1; text-align: center; color: var(--secondary-text); font-size: 0.68rem; cursor: pointer; padding: 4px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
-    .tab-item.active { color: var(--blue); font-weight: bold; }
-    .tab-item svg { width: 18px; height: 18px; fill: currentColor; }
+    /* Barra de Navegación Inferior (PWA) */
+    nav.tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+    .tab-item { flex: 1; text-align: center; color: #64748b; font-size: 0.75rem; cursor: pointer; padding: 6px 0; }
+    .tab-item.active { color: var(--primary); font-weight: bold; }
 
-    .tab-badge { position: absolute; top: 1px; right: 20%; background: var(--purple); color: white; font-size: 0.6rem; font-weight: bold; padding: 1px 5px; border-radius: 10px; min-width: 14px; }
+    /* Mapa de Bodega */
+    .map-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+    .fila-col { min-width: 140px; background: #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 4px; background: white; border-radius: 6px; }
+    .pos-box { background: white; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #cbd5e1; }
+    .pallet-slot { padding: 6px; border-radius: 4px; font-size: 0.75rem; text-align: left; }
+    .pallet-slot.fifo-star { background: var(--warning) !important; color: white; font-weight: bold; }
+    .pallet-slot.retornado { background: #f3e8ff; border: 1px solid var(--purple); }
+    .pallet-slot.empty { border: 1px dashed #cbd5e1; color: #94a3b8; text-align: center; }
 
-    /* Mapa y estructura visual compacta horizontal */
-    .map-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
-    .fila-col { min-width: 135px; background: rgba(128,128,128,0.08); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
-    .fila-col.rack-col { min-width: 290px; background: rgba(0, 122, 255, 0.05); border: 1.5px solid rgba(0, 122, 255, 0.3); }
-    .fila-header { font-weight: bold; text-align: center; font-size: 0.82rem; padding: 6px; background: var(--btn-bordered-bg); color: var(--text); border-radius: 8px; }
-    .pos-box { background: var(--card); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
-    
-    .rack-level-row { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-    .pallet-slot { min-width: 105px; flex: 1; padding: 6px; border-radius: 6px; font-size: 0.7rem; text-align: left; cursor: pointer; color: var(--text); background: var(--slot-bg); border: 1px solid var(--border); }
-    .pallet-slot.vacio { border: 1px dashed var(--border); background: transparent; color: var(--secondary-text); }
-    .pallet-slot.cargado { border: 1.5px solid var(--green); background: rgba(52, 199, 89, 0.12); }
-    .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
-
-    /* Modales */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
-    .modal-content { background: var(--card); color: var(--text); width: 100%; max-width: 440px; max-height: 85vh; border-radius: 14px; overflow-y: auto; padding: 16px; border: 1px solid var(--border); }
-    .etiqueta-brother { width: 320px; border: 1.5px solid black; background: white; padding: 14px; border-radius: 10px; margin: 10px auto; text-align: center; color: black; }
+    /* Cámara Modal */
+    #scanner-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+    #reader { width: 100%; max-width: 400px; background: white; border-radius: 12px; overflow: hidden; }
   </style>
 </head>
 <body>
 
   <header>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <h1 id="header-title">Bodega MP</h1>
-      <select id="selector-version-app" onchange="cambiarVersionApp(this.value)" style="width: auto; margin: 0; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; background: #2c2c2e; color: white; border: 1px solid #3a3a3c;">
-        <option value="V1">📦 Materia Prima (V1)</option>
-        <option value="V2">🎨 Colorantes (V2)</option>
-      </select>
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <button id="btn-modo-noche" onclick="toggleModoNoche()" style="background: #2c2c2e; color: white; border: 1px solid #3a3a3c; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">🌙 Noche</button>
-      <span id="stock-kilos-badge" style="font-size: 0.8rem; background: #2c2c2e; padding: 4px 8px; border-radius: 6px;">0.0 kg</span>
-    </div>
+    <h1 id="app-title">Bodega MP</h1>
+    <span id="stock-summary" style="font-size: 0.85rem; background: #334155; padding: 4px 8px; border-radius: 6px;">0 Pallets</span>
   </header>
 
-  <!-- 1. RECEPCIÓN CAMIÓN (ACTIVO EN V1 MATERIA PRIMA, OCULTO EN V2 COLORANTES) -->
-  <section id="view-camion" class="view-section">
+  <!-- SECCIÓN 1: RECEPCIÓN CAMIÓN -->
+  <section id="view-recepcion" class="view-section">
     <div class="card">
-      <h3 style="font-size: 1rem; margin-bottom: 8px;">Recepción Camión (Materia Prima)</h3>
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Plantilla de Catálogo</label>
-      <select id="rec-material" onchange="actualizarPlantilla()"></select>
+      <h3>Cargar Nuevo Camión</h3>
+      <label>Componente / Material:</label>
+      <select id="rec-material" onchange="actualizarValoresPlantilla()"></select>
 
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Código de Material (Obligatorio)</label>
-      <input type="text" id="rec-codigo">
+      <label>Código:</label>
+      <input type="text" id="rec-codigo" readonly>
 
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Descripción / Nombre (Obligatorio)</label>
-      <input type="text" id="rec-nombre">
+      <label>Lote Proveedor (Obligatorio):</label>
+      <input type="text" id="rec-lote" placeholder="Ej: L-9045A">
 
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote del Proveedor (Obligatorio)</label>
-      <input type="text" id="rec-lote" placeholder="Lote..." oninput="validarFormularioCamion()">
-
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila Asignada para este Camión</label>
+      <label>Fila de Bodega:</label>
       <select id="rec-fila"></select>
 
-      <div style="display: flex; gap: 8px;">
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso Total Pallet (kg)</label>
-          <input type="number" id="rec-peso" value="1200" oninput="validarFormularioCamion()">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Cantidad Pallets</label>
-          <input type="number" id="rec-cantidad" value="40" oninput="validarFormularioCamion()">
-        </div>
-      </div>
+      <label>Peso por Pallet (kg):</label>
+      <input type="number" id="rec-peso" value="1200">
 
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(2)">2 Pallets</button>
-        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(20)">20 Pallets</button>
-        <button class="btn btn-bordered" style="flex: 1;" onclick="setCantidad(40)">40 Pallets</button>
-      </div>
+      <label>Cantidad de Pallets:</label>
+      <input type="number" id="rec-cantidad" value="40">
 
-      <p id="total-carga-camion" style="font-size: 0.85rem; font-weight: bold; color: var(--blue); margin-bottom: 8px;">Total carga: 48000.0 kg</p>
-
-      <button id="btn-crear-lote" class="btn btn-blue" style="width: 100%;" onclick="crearLote()" disabled>
-        Completa los Datos para Crear
-      </button>
-
-      <hr style="margin: 14px 0 10px 0; border: none; border-top: 1px solid var(--border);">
-      <h4 style="font-size: 0.9rem; margin-bottom: 6px;">Recepción Masiva por Excel</h4>
-      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaRecepcionExcel()">📥 Plantilla Excel</button>
-        <input type="file" id="file-import-recepcion-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarRecepcionExcel(event)">
-        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-recepcion-excel').click()">📤 Cargar Excel Masivo</button>
-      </div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="crearLoteCamion()">Crear Códigos y Guardar</button>
     </div>
   </section>
 
-  <!-- 2. BODEGA MP -->
+  <!-- SECCIÓN 2: BODEGA (DESPACHO FIFO POR COMPONENTE) -->
   <section id="view-bodega" class="view-section active">
-    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-      <button id="btn-modo-entrada" class="btn btn-green" style="flex: 1;" onclick="setModoOperacion('ENTRADA BODEGA')">📥 Entrada a Bodega</button>
-      <button id="btn-modo-despacho" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperacion('DESPACHO PRODUCCIÓN (FIFO)')">📤 Despacho a bodega</button>
-    </div>
-
-    <div id="banner-modo" class="card" style="background: rgba(52, 199, 89, 0.15); color: var(--green); border: none;">
-      <strong id="banner-modo-titulo">MODO ENTRADA ACTIVO</strong>
-      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
-    </div>
-
-    <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
-
-    <button id="btn-scanner-principal" class="btn btn-blue" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="abrirCamara(null)">
-      Escanear Código con Cámara
-    </button>
-
-    <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-      <input type="text" id="serial-manual" placeholder="O validar por serial manual (Ej: BTO-00101)..." style="margin: 0;">
-      <button class="btn btn-bordered" onclick="validarManual()">Validar</button>
-    </div>
-
     <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-      <div class="card" style="flex: 1; text-align: center; margin: 0;">
-        <small style="color: var(--secondary-text);">Bultos en Bodega</small>
-        <h3 id="bultos-stock-count">0</h3>
-      </div>
-      <div class="card" style="flex: 1; text-align: center; margin: 0;">
-        <small style="color: var(--secondary-text);">Kilos en Bodega</small>
-        <h3 id="bultos-stock-kilos" style="color: var(--blue);">0.0 kg</h3>
-      </div>
+      <button class="btn btn-primary" style="flex: 1;" onclick="abrirCamara('ENTRADA')">📥 Entrada a Bodega</button>
+      <button class="btn btn-warning" style="flex: 1;" onclick="abrirCamara('DESPACHO')">📤 Escaneo General</button>
     </div>
 
-    <div class="card">
-      <small style="font-weight: bold; color: var(--secondary-text);">Últimos Registros</small>
-      <div id="lista-ultimos-registros" style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;"></div>
-    </div>
+    <h3>Componentes en Stock (Regla FIFO):</h3>
+    <div id="lista-fifo-componentes" style="margin-top: 10px;"></div>
   </section>
 
-  <!-- 3. MAPA DE BODEGA -->
+  <!-- SECCIÓN 3: MAPA VISUAL CON NIVELES (APILAMIENTO DOBLE) -->
   <section id="view-mapa" class="view-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
-      <div id="leyenda-mapa" style="display: flex; gap: 8px; font-size: 0.7rem; flex-wrap: wrap;">
-        <span><b style="color: var(--orange);">⭐ Prioritario</b></span>
-        <span><b style="color: var(--green);">■ Con Stock</b></span>
-        <span><b style="color: var(--secondary-text);">□ Vacío</b></span>
-      </div>
-      <div style="display: flex; gap: 6px;">
-        <button id="btn-imprimir-racks" class="btn btn-bordered" style="font-size: 0.72rem; padding: 5px 8px; display: none;" onclick="imprimirCodigosRackFijosPDF()">🖨️ Etiquetas Racks</button>
-        <button class="btn btn-blue" style="font-size: 0.72rem; padding: 5px 8px;" onclick="compactarPosiciones()">Compactar</button>
-      </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3>Layout de Bodega</h3>
+      <button class="btn btn-primary" onclick="compactarPasillos()">Correr / Compactar</button>
     </div>
-
-    <div class="map-container" id="mapa-filas-render"></div>
+    <div class="map-container" id="mapa-bodega-filas"></div>
   </section>
 
-  <!-- 4. PRODUCCIÓN / TRÁNSITO -->
-  <section id="view-produccion" class="view-section">
-    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-      <div class="card" style="flex: 1; background: rgba(175, 82, 222, 0.1); margin: 0; border: none;">
-        <small style="color: var(--secondary-text);">En Tránsito / Planta</small>
-        <h4 id="planta-pallets-count" style="color: var(--purple);">0 pallets</h4>
-      </div>
-      <div class="card" style="flex: 1; background: rgba(175, 82, 222, 0.1); margin: 0; border: none;">
-        <small style="color: var(--secondary-text);">Kilos en Tránsito</small>
-        <h4 id="planta-kilos-count" style="color: var(--purple);">0.0 kg</h4>
-      </div>
+  <!-- SECCIÓN 4: PRODUCCIÓN / TRÁNSITO -->
+  <section id="view-planta" class="view-section">
+    <div class="card" style="background: #fdf4ff; border-color: var(--purple);">
+      <h3 style="color: var(--purple);">En Tránsito / Planta</h3>
+      <p id="planta-kilos">0 kg en producción</p>
     </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <button class="btn btn-purple" style="width: 100%; margin-right: 6px;" onclick="abrirCamaraPlanta()">Escanear Pallet en Planta</button>
-      <button class="btn btn-red" style="font-size: 0.75rem; padding: 8px;" onclick="consumirRestantes()">Consumir Restantes</button>
-    </div>
-
     <div id="lista-pallets-planta"></div>
   </section>
 
-  <!-- 5. INVENTARIO GENERAL -->
-  <section id="view-inventario" class="view-section">
-    <select id="inv-filtro-estado" onchange="renderizarInventario()">
-      <option value="Todos">Todos</option>
-      <option value="En Stock">Bodega</option>
-      <option value="En Tránsito">Tránsito</option>
-      <option value="Creado">Creados</option>
-      <option value="Consumido">Consumidos</option>
-    </select>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <select id="inv-agrupar" style="width: 180px; margin: 0;" onchange="renderizarInventario()">
-        <option value="Por Material">Por Material</option>
-        <option value="Por Fila">Por Fila</option>
-        <option value="Por Lote">Por Lote</option>
-        <option value="Por Estado">Por Estado</option>
-      </select>
-      <button class="btn btn-red" style="font-size: 0.75rem;" onclick="borrarCreadosNoEscaneados()">Limpiar Creados</button>
-    </div>
-
-    <div id="lista-inventario-agrupado"></div>
-  </section>
-
-  <!-- 6. AUDITORÍA DE FLUJOS -->
-  <section id="view-auditoria" class="view-section">
-    <div id="lista-auditoria-agrupada"></div>
-  </section>
-
-  <!-- 7. CONFIGURACIÓN Y RESPALDO -->
+  <!-- SECCIÓN 5: RESPALDO Y GESTIÓN DE FILAS -->
   <section id="view-respaldo" class="view-section">
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 0.9rem;">Gestión de Filas / Pasillos</h4>
-        <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="toggleModoEditarFilas()">Ordenar</button>
+      <h3>Gestión de Filas Físicas</h3>
+      <div style="display: flex; gap: 6px; margin-top: 8px;">
+        <input type="text" id="nueva-fila-nombre" placeholder="Ej: Fila 9">
+        <button class="btn btn-primary" onclick="agregarFila()">Añadir</button>
       </div>
-      <div style="display: flex; gap: 4px; margin-top: 6px;">
-        <input type="text" id="nueva-fila-nombre" placeholder="Nombre (Ej: Rack A o Fila 9)..." style="margin: 0; flex: 1.5;">
-        <select id="nueva-fila-tipo" style="margin: 0; flex: 1;" onchange="toggleOpcionesRackNuevaFila()">
-          <option value="Piso">Piso (Tradicional V1)</option>
-          <option value="Rack">Rack (Posición Única V2)</option>
-        </select>
-        <button class="btn btn-blue" onclick="agregarFila()">Añadir</button>
-      </div>
-      <div id="opciones-nueva-fila-rack" style="display: none; gap: 6px; margin-top: 6px; background: var(--subbox-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
-        <div style="flex: 1;">
-          <label style="font-size: 0.72rem; color: var(--secondary-text);">Niveles de Altura:</label>
-          <input type="number" id="nueva-fila-niveles" value="3" min="1" max="10" style="margin: 2px 0 0 0; padding: 6px;">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 0.72rem; color: var(--secondary-text);">Posiciones Lado a Lado:</label>
-          <input type="number" id="nueva-fila-posiciones" value="4" min="1" max="30" style="margin: 2px 0 0 0; padding: 6px;">
-        </div>
-      </div>
-      <div id="lista-filas-gestion" style="margin-top: 8px;"></div>
+      <div id="lista-filas-gestion" style="margin-top: 10px;"></div>
     </div>
 
     <div class="card">
-      <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Control Externo y Archivo Excel</h4>
-      <button class="btn btn-green" style="width: 100%; margin-bottom: 8px;" onclick="exportarCSV()">Compartir Kardex Único (.CSV)</button>
-      <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="exportarJSON()">Exportar Copia Completa (.JSON)</button>
-      <input type="file" id="file-import-json" style="display: none;" onchange="importarJSON(event)">
-      <button class="btn btn-orange" style="width: 100%; margin-bottom: 8px;" onclick="document.getElementById('file-import-json').click()">Restaurar Respaldo Externo</button>
-      <button class="btn btn-red" style="width: 100%;" onclick="purgarBaseDeDatos()">Restablecer Base de Datos (Limpiar Todo)</button>
-    </div>
-
-    <div class="card">
-      <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Catálogo de Materiales</h4>
-      <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="abrirModalMaterial(null)">Nuevo Artículo al Catálogo</button>
-      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaCatalogoExcel()">📥 Plantilla Excel</button>
-        <input type="file" id="file-import-catalogo-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarCatalogoExcel(event)">
-        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-catalogo-excel').click()">📤 Cargar Excel Masivo</button>
-      </div>
-      <div id="lista-catalogo-gestion"></div>
+      <h3>Kardex y Respaldo</h3>
+      <button class="btn btn-primary" style="width: 100%; margin-bottom: 8px;" onclick="exportarCSV()">Descargar Kardex (.CSV)</button>
+      <button class="btn btn-warning" style="width: 100%;" onclick="exportarJSON()">Descargar Copia Completa (.JSON)</button>
     </div>
   </section>
 
-  <!-- MODAL GESTIONAR POSICIÓN RACK (V2 COLORANTES: CARGAR O RETIRAR BOLSAS) -->
-  <div id="modal-operar-posicion-rack" class="modal">
-    <div class="modal-content">
-      <h3 id="op-rack-titulo" style="color: var(--blue);">Posición Rack</h3>
-      <p id="op-rack-subtitulo" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <input type="hidden" id="op-rack-codigo-pos">
-
-      <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-        <button id="btn-tab-op-cargar" class="btn btn-green" style="flex: 1;" onclick="setModoOperarRack('CARGAR')">➕ Cargar / Reponer</button>
-        <button id="btn-tab-op-retirar" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperarRack('RETIRAR')">📤 Retirar Bolsas</button>
-      </div>
-
-      <!-- FORMULARIO DE CARGA DIRECTA EN LA POSICIÓN -->
-      <div id="form-rack-cargar">
-        <label style="font-size: 0.8rem; color: var(--secondary-text);">Material a Asignar/Cargar:</label>
-        <select id="op-rack-material-select" onchange="actualizarValoresBolsaRack()"></select>
-
-        <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote:</label>
-        <input type="text" id="op-rack-lote" placeholder="Lote del producto...">
-
-        <div style="display: flex; gap: 8px;">
-          <div style="flex: 1;">
-            <label style="font-size: 0.75rem; color: var(--secondary-text);">Bolsas a Cargar:</label>
-            <input type="number" id="op-rack-cant-bolsas" value="25" min="1" oninput="recalcularKilosCargaRack()">
-          </div>
-          <div style="flex: 1;">
-            <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
-            <input type="number" id="op-rack-peso-bolsa" value="15" oninput="recalcularKilosCargaRack()">
-          </div>
-        </div>
-
-        <p id="op-rack-total-kilos-txt" style="font-size: 0.82rem; font-weight: bold; color: var(--green); margin-bottom: 8px;">Total a sumar: 375.0 kg</p>
-        <button class="btn btn-green" style="width: 100%;" onclick="confirmarCargaBolsasRack()">Guardar Carga en Posición</button>
-      </div>
-
-      <!-- FORMULARIO DE RETIRO DE BOLSAS PARA PRODUCCIÓN -->
-      <div id="form-rack-retirar" style="display: none;">
-        <label style="font-size: 0.75rem; color: var(--secondary-text);">Bolsas a Retirar para Planta:</label>
-        <input type="number" id="op-rack-retirar-bolsas" value="1" min="1" oninput="recalcularKilosRetiroRack()">
-        
-        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(1)">1 Bls</button>
-          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(2)">2 Bls</button>
-          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(3)">3 Bls</button>
-          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(4)">4 Bls</button>
-        </div>
-
-        <p id="op-rack-retiro-kilos-txt" style="font-size: 0.82rem; font-weight: bold; color: var(--orange); margin-bottom: 8px;"></p>
-        <button class="btn btn-orange" style="width: 100%;" onclick="confirmarRetiroBolsasRack()">Retirar a Producción</button>
-      </div>
-
-      <div style="display: flex; gap: 8px; margin-top: 10px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-operar-posicion-rack')">Cerrar</button>
-        <button class="btn btn-blue" style="flex: 1;" onclick="imprimirEtiquetaPosicionRack()">🖨️ Etiqueta Posición</button>
-      </div>
-    </div>
+  <!-- MODAL DE CÁMARA (AVFOUNDATION / HTML5 QRCODE) -->
+  <div id="scanner-modal">
+    <div id="reader"></div>
+    <div id="scanner-label" style="color: white; margin-top: 12px; font-weight: bold; text-align: center;"></div>
+    <button class="btn btn-danger" style="margin-top: 14px;" onclick="cerrarCamara()">Cancelar</button>
   </div>
 
-  <!-- MODAL DETALLE PALLET V1 -->
-  <div id="modal-pallet-mapa" class="modal">
-    <div class="modal-content">
-      <div id="render-etiqueta-detalle"></div>
-      <div id="render-datos-detalle" style="margin: 10px 0; font-size: 0.85rem;"></div>
-      <button class="btn btn-bordered" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa')">Cerrar</button>
-    </div>
-  </div>
-
-  <!-- MODAL ETIQUETAS BROTHER -->
-  <div id="modal-etiquetas" class="modal">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>Etiquetas Generadas</h3>
-        <button class="btn btn-bordered" onclick="cerrarModal('modal-etiquetas')">Listo</button>
-      </div>
-      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="descargarLotePDF()">Descargar PDF Etiquetas (62mm)</button>
-      <div id="contenedor-etiquetas-brother"></div>
-    </div>
-  </div>
-
-  <!-- MODAL SCANNER -->
-  <div id="modal-scanner" class="modal">
-    <div class="modal-content" style="max-width: 340px; text-align: center;">
-      <div id="reader"></div>
-      <p id="scanner-objetivo-msg" style="font-size: 0.8rem; margin-top: 8px; font-weight: bold; color: var(--orange);"></p>
-      <button class="btn btn-red" style="width: 100%; margin-top: 10px;" onclick="cerrarScanner()">Cerrar</button>
-    </div>
-  </div>
-
-  <!-- MODAL EDITOR MATERIAL -->
-  <div id="modal-editor-material" class="modal">
-    <div class="modal-content">
-      <h3 id="editor-mat-titulo">Nuevo Material</h3>
-      <input type="hidden" id="editor-mat-id">
-      <label style="font-size: 0.8rem;">Código:</label>
-      <input type="text" id="editor-mat-codigo">
-      <label style="font-size: 0.8rem;">Nombre:</label>
-      <input type="text" id="editor-mat-nombre">
-
-      <div style="display: flex; gap: 8px;">
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem;">Bolsas x Pallet:</label>
-          <input type="number" id="editor-mat-bolsas" value="25" min="1" oninput="calcularPesoDesdeBolsasEditor()">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem;">Peso x Bolsa (kg):</label>
-          <input type="number" id="editor-mat-peso-bolsa" value="15" min="0.1" step="any" oninput="calcularPesoDesdeBolsasEditor()">
-        </div>
-      </div>
-
-      <label style="font-size: 0.8rem;">Peso estándar total por Pallet (kg):</label>
-      <input type="number" id="editor-mat-peso" value="375">
-
-      <label style="font-size: 0.8rem;">Tipo de Empaque:</label>
-      <select id="editor-mat-empaque">
-        <option value="Pallet">Pallet</option>
-        <option value="Bolsas en Pallet">Bolsas en Pallet</option>
-        <option value="Bolsa">Bolsa</option>
-        <option value="Caja">Caja</option>
-      </select>
-      <label style="font-size: 0.8rem;">Control FIFO:</label>
-      <select id="editor-mat-fifo">
-        <option value="true">Activado (Exigir antigüedad FIFO)</option>
-        <option value="false">Desactivado (Libre extracción)</option>
-      </select>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-editor-material')">Cancelar</button>
-        <button class="btn btn-blue" style="flex: 1;" onclick="guardarMaterialCatalogo()">Guardar</button>
-      </div>
-      <button id="btn-eliminar-material" class="btn btn-red" style="width: 100%; margin-top: 8px; display: none;" onclick="eliminarMaterialCatalogo()">Eliminar</button>
-    </div>
-  </div>
-
-  <!-- BARRA DE NAVEGACIÓN -->
+  <!-- NAVEGACIÓN INFERIOR (PWA) -->
   <nav class="tabbar">
-    <div id="tab-nav-camion" class="tab-item" onclick="cambiarTab('view-camion', this)">
-      <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      Recepción
-    </div>
-    <div id="tab-nav-bodega" class="tab-item active" onclick="cambiarTab('view-bodega', this)">
-      <svg viewBox="0 0 24 24"><path d="M4 10h16v10H4zM2 4h20v4H2z"/></svg>
-      Bodega
-    </div>
-    <div id="tab-nav-mapa" class="tab-item" onclick="cambiarTab('view-mapa', this)">
-      <svg viewBox="0 0 24 24"><path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/></svg>
-      Mapa
-    </div>
-    <div id="tab-nav-produccion" class="tab-item" onclick="cambiarTab('view-produccion', this)">
-      <span class="tab-badge" id="badge-planta" style="display: none;">0</span>
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-      Planta
-    </div>
-    <div id="tab-nav-inventario" class="tab-item" onclick="cambiarTab('view-inventario', this)">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
-      Inventario
-    </div>
-    <div id="tab-nav-auditoria" class="tab-item" onclick="cambiarTab('view-auditoria', this)">
-      <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-      Auditoría
-    </div>
-    <div id="tab-nav-respaldo" class="tab-item" onclick="cambiarTab('view-respaldo', this)">
-      <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-      Respaldo
-    </div>
+    <div class="tab-item" onclick="cambiarTab('view-recepcion', this)">Recepción</div>
+    <div class="tab-item active" onclick="cambiarTab('view-bodega', this)">Bodega</div>
+    <div class="tab-item" onclick="cambiarTab('view-mapa', this)">Mapa</div>
+    <div class="tab-item" onclick="cambiarTab('view-planta', this)">Planta</div>
+    <div class="tab-item" onclick="cambiarTab('view-respaldo', this)">Respaldo</div>
   </nav>
 
   <script>
-    const STORAGE_KEY_V1 = "FLUJOS_SISTEMA_BODEGA_DATA";
-    const STORAGE_KEY_V2 = "FLUJOS_SISTEMA_COLORANTES_DATA";
-    const nombreFilaRetornados = "Retornados";
-
-    let state = {
-      versionApp: "V1", // "V1" = Materia Prima, "V2" = Colorantes
+    // --- ESTADO Y PERSISTENCIA PERMANENTE ---
+    const DB_KEY = "SISTEMA_BODEGA_MP_DATA";
+    
+    let db = {
       contador: 100,
-      modoNoche: false,
-      modoOperacion: "ENTRADA BODEGA",
-      filasBodega: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
-      configFilas: {},
+      filas: ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"],
       catalogo: [
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", pesoDefault: 1200, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 1200 },
-        { id: crypto.randomUUID(), codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", pesoDefault: 850, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 850 },
-        { id: crypto.randomUUID(), codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 30, pesoBolsaDefault: 25 },
-        { id: crypto.randomUUID(), codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", pesoDefault: 750, tipoEmpaque: "Pallet", usaFIFO: true, bolsasPorPallet: 30, pesoBolsaDefault: 25 },
-        { id: crypto.randomUUID(), codigo: "RMGE00001", nombre: "Material - Caprolactama", pesoDefault: 25, tipoEmpaque: "Bolsa", usaFIFO: true, bolsasPorPallet: 1, pesoBolsaDefault: 25 }
+        { codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - AZOTY", peso: 1200 },
+        { codigo: "RMGE00007", nombre: "Material - PA6 - Genérico - JIANGSU", peso: 850 },
+        { codigo: "RMGE00012", nombre: "Material - PA6 - 1030MB", peso: 750 },
+        { codigo: "RMGE00024", nombre: "Material - PA6/6.6 - 5034 MTX1", peso: 750 },
+        { codigo: "RMGE00001", nombre: "Material - Caprolactama", peso: 25 }
       ],
       bultos: [],
       movimientos: []
     };
 
-    let palletObjetivoFIFO = null;
-    let modoEdicionFilas = false;
-    let scannerActivo = null;
-    let ultimoLoteGenerado = [];
-
-    function getStorageKey() {
-      return (state.versionApp === "V2") ? STORAGE_KEY_V2 : STORAGE_KEY_V1;
-    }
-
-    // --- CAMBIAR VERSIÓN (V1 MATERIA PRIMA vs V2 COLORANTES) ---
-    function cambiarVersionApp(version) {
-      guardarTodo(); // guardar estado actual
-      state.versionApp = version;
-      localStorage.setItem("BODEGA_VERSION_SELECCIONADA", version);
-      cargarTodo();
-    }
-
-    function aplicarConfiguracionVersion() {
-      const esV2 = (state.versionApp === "V2");
-      document.getElementById('header-title').innerText = esV2 ? "Bodega Colorantes" : "Bodega Materia Prima";
-      document.getElementById('selector-version-app').value = state.versionApp;
-      
-      // En Colorantes (V2), la recepción tradicional de camión no opera; se opera todo desde el mapa
-      const tabCamion = document.getElementById('tab-nav-camion');
-      const btnImprimirRacks = document.getElementById('btn-imprimir-racks');
-
-      if (esV2) {
-        tabCamion.style.display = 'none';
-        btnImprimirRacks.style.display = 'inline-flex';
-        if (document.getElementById('view-camion').classList.contains('active')) {
-          cambiarTab('view-mapa', document.getElementById('tab-nav-mapa'));
-        }
-      } else {
-        tabCamion.style.display = 'flex';
-        btnImprimirRacks.style.display = 'none';
-      }
-    }
-
-    // --- MODO NOCHE ---
-    function aplicarModoNoche() {
-      const activo = !!state.modoNoche;
-      document.body.classList.toggle('dark-mode', activo);
-      const btn = document.getElementById('btn-modo-noche');
-      if (btn) btn.innerText = activo ? '☀️ Día' : '🌙 Noche';
-    }
-
-    function toggleModoNoche() {
-      state.modoNoche = !state.modoNoche;
-      aplicarModoNoche();
-      guardarTodo();
-    }
-
-    function getConfigFila(nombreFila) {
-      if (!state.configFilas) state.configFilas = {};
-      if (!state.configFilas[nombreFila]) {
-        const esV2 = (state.versionApp === "V2");
-        state.configFilas[nombreFila] = {
-          tipo: esV2 ? "Rack" : "Piso",
-          niveles: esV2 ? 3 : 2,
-          posicionesPorNivel: 4
-        };
-      }
-      return state.configFilas[nombreFila];
-    }
-
-    function materialUsaFIFO(nombreMaterial) {
-      const mat = state.catalogo.find(c => c.nombre === nombreMaterial);
-      if (!mat) return true;
-      return mat.usaFIFO !== false;
-    }
-
-    function obtenerMaterialPorNombre(nombreMaterial) {
-      return state.catalogo.find(c => c.nombre === nombreMaterial) || null;
-    }
-
     function guardarTodo() {
-      localStorage.setItem(getStorageKey(), JSON.stringify(state));
-      actualizarEstadisticas();
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      actualizarIndicadores();
     }
 
     function cargarTodo() {
-      const versionGuardada = localStorage.getItem("BODEGA_VERSION_SELECCIONADA") || state.versionApp || "V1";
-      state.versionApp = versionGuardada;
-
-      const guardado = localStorage.getItem(getStorageKey());
-      if (guardado) {
-        try { state = JSON.parse(guardado); } catch (e) { console.error(e); }
+      const saved = localStorage.getItem(DB_KEY);
+      if (saved) {
+        try { db = JSON.parse(saved); } catch (e) { console.error(e); }
       }
-      state.versionApp = versionGuardada;
-
-      if (!state.filasBodega || state.filasBodega.length === 0) {
-        state.filasBodega = ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"];
+      if (!db.filas || db.filas.length === 0) {
+        db.filas = ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"];
       }
-      if (!state.configFilas) state.configFilas = {};
-      if (state.catalogo) {
-        state.catalogo.forEach(c => {
-          if (c.usaFIFO === undefined) c.usaFIFO = true;
-          if (!c.bolsasPorPallet) c.bolsasPorPallet = Math.max(1, Math.round(c.pesoDefault / 25)) || 1;
-          if (!c.pesoBolsaDefault) c.pesoBolsaDefault = (c.pesoDefault / c.bolsasPorPallet) || 25;
-        });
-      }
-
-      aplicarConfiguracionVersion();
-      aplicarModoNoche();
-      poblarSelectores();
-      renderizarBodega();
-      actualizarEstadisticas();
-    }
-
-    function purgarBaseDeDatos() {
-      if (!confirm(`⚠️ ¿Restablecer toda la base de datos de ${state.versionApp === 'V2' ? 'Colorantes (V2)' : 'Materia Prima (V1)'}?`)) return;
-      state.bultos = [];
-      state.movimientos = [];
-      state.contador = 100;
-      guardarTodo();
+      poblarSelects();
+      actualizarIndicadores();
       renderizarBodega();
       renderizarMapa();
-      renderizarProduccion();
-      renderizarInventario();
-      renderizarAuditoria();
-      alert("Base de datos restablecida.");
+      renderizarPlanta();
+      renderizarFilasGestion();
     }
 
-    function cambiarTab(tabId, el) {
+    // --- CAMBIAR PESTAÑAS ---
+    function cambiarTab(viewId, el) {
       document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      if (el) el.classList.add('active');
-
-      if (tabId === 'view-bodega') renderizarBodega();
-      if (tabId === 'view-mapa') renderizarMapa();
-      if (tabId === 'view-produccion') renderizarProduccion();
-      if (tabId === 'view-inventario') renderizarInventario();
-      if (tabId === 'view-auditoria') renderizarAuditoria();
-      if (tabId === 'view-respaldo') renderizarGestionFilas();
+      document.getElementById(viewId).classList.add('active');
+      el.classList.add('active');
+      if (viewId === 'view-bodega') renderizarBodega();
+      if (viewId === 'view-mapa') renderizarMapa();
+      if (viewId === 'view-planta') renderizarPlanta();
+      if (viewId === 'view-respaldo') renderizarFilasGestion();
     }
 
-    function actualizarEstadisticas() {
-      const enStock = state.bultos.filter(b => b.estado === 'En Stock' && b.kilos > 0);
-      const totalKilos = enStock.reduce((acc, b) => acc + b.kilos, 0);
-      document.getElementById('bultos-stock-count').innerText = enStock.length;
-      document.getElementById('bultos-stock-kilos').innerText = `${totalKilos.toFixed(1)} kg`;
-      document.getElementById('stock-kilos-badge').innerText = `${totalKilos.toFixed(1)} kg`;
-
-      const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
-      const badgePlanta = document.getElementById('badge-planta');
-      if (enPlanta.length > 0) {
-        badgePlanta.style.display = 'inline-block';
-        badgePlanta.innerText = enPlanta.length;
-      } else {
-        badgePlanta.style.display = 'none';
-      }
-
-      document.getElementById('planta-pallets-count').innerText = `${enPlanta.length} pallets`;
-      document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
+    function actualizarIndicadores() {
+      const enStock = db.bultos.filter(b => b.estado === 'En Stock');
+      document.getElementById('stock-summary').innerText = `${enStock.length} Pallets | ${enStock.reduce((a, b) => a + b.kilos, 0)} kg`;
     }
 
-    // --- FIFO ---
-    function compararFIFO(a, b) {
-      const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
-      const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
-      if (fa.getTime() !== fb.getTime()) return fa - fb;
-      return a.serial.localeCompare(b.serial);
-    }
-
-    function esExtraiblePorOperador(pallet) {
-      const cfg = getConfigFila(pallet.filaBodega);
-      if (cfg.tipo === "Rack" && state.versionApp === "V2") {
-        return true; // En Colorantes V2 se retira de la posición asignada
-      }
-      return true;
-    }
-
-    function obtenerListasFIFOPorComponente() {
-      const enStock = state.bultos.filter(b => b.estado === 'En Stock' && b.kilos > 0);
-      const agrupados = {};
-      enStock.forEach(b => {
-        if (!agrupados[b.nombreMaterial]) agrupados[b.nombreMaterial] = [];
-        agrupados[b.nombreMaterial].push(b);
-      });
-
-      return Object.keys(agrupados).map(nombreMat => {
-        const ordenados = agrupados[nombreMat].sort(compararFIFO);
-        const activoFIFO = materialUsaFIFO(nombreMat);
-        return {
-          nombreMaterial: nombreMat,
-          codigoMaterial: ordenados[0].codigoMaterial,
-          usaFIFO: activoFIFO,
-          palletsEnStock: ordenados,
-          palletPrioritario: activoFIFO ? ordenados[0] : null,
-          totalKilos: ordenados.reduce((a, b) => a + b.kilos, 0)
-        };
-      }).sort((a, b) => a.nombreMaterial.localeCompare(b.nombreMaterial));
-    }
-
-    function esPalletFIFOPrioritario(serial) {
-      const listas = obtenerListasFIFOPorComponente();
-      return listas.some(g => g.usaFIFO && g.palletPrioritario && g.palletPrioritario.serial === serial);
-    }
-
-    // --- RECEPCIÓN CAMIÓN (V1) ---
-    function poblarSelectores() {
+    function poblarSelects() {
       const selMat = document.getElementById('rec-material');
-      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg)</option>`).join('');
-      actualizarPlantilla();
+      selMat.innerHTML = db.catalogo.map((c, i) => `<option value="${i}">${c.nombre}</option>`).join('');
+      actualizarValoresPlantilla();
 
       const selFila = document.getElementById('rec-fila');
-      const disponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
-      selFila.innerHTML = disponibles.map(f => `<option value="${f}">${f}</option>`).join('');
+      selFila.innerHTML = db.filas.map(f => `<option value="${f}">${f}</option>`).join('');
     }
 
-    function actualizarPlantilla() {
+    function actualizarValoresPlantilla() {
       const idx = document.getElementById('rec-material').value;
-      const mat = state.catalogo[idx];
-      if (!mat) return;
+      const mat = db.catalogo[idx];
       document.getElementById('rec-codigo').value = mat.codigo;
-      document.getElementById('rec-nombre').value = mat.nombre;
-      document.getElementById('rec-peso').value = mat.pesoDefault;
-      validarFormularioCamion();
+      document.getElementById('rec-peso').value = mat.peso;
     }
 
-    function setCantidad(num) {
-      document.getElementById('rec-cantidad').value = num;
-      validarFormularioCamion();
-    }
-
-    function validarFormularioCamion() {
-      const codigo = document.getElementById('rec-codigo').value.trim();
-      const nombre = document.getElementById('rec-nombre').value.trim();
+    // --- CREACIÓN DE PALLETS ---
+    function crearLoteCamion() {
+      const idx = document.getElementById('rec-material').value;
+      const mat = db.catalogo[idx];
       const lote = document.getElementById('rec-lote').value.trim();
-      const peso = parseFloat(document.getElementById('rec-peso').value);
-      const cant = parseInt(document.getElementById('rec-cantidad').value);
-
-      const esValido = codigo && nombre && lote && !isNaN(peso) && peso > 0 && cant > 0;
-      const btn = document.getElementById('btn-crear-lote');
-      btn.disabled = !esValido;
-      btn.innerText = esValido ? `Crear ${cant} Códigos y Ver Etiquetas` : "Completa los Datos para Crear";
-
-      if (!isNaN(peso) && !isNaN(cant)) {
-        document.getElementById('total-carga-camion').innerText = `Total carga: ${(peso * cant).toFixed(1)} kg`;
-      }
-    }
-
-    function crearLote() {
-      const matIdx = document.getElementById('rec-material').value;
-      const mat = state.catalogo[matIdx] || {};
-      const codigo = document.getElementById('rec-codigo').value.trim().toUpperCase();
-      const nombre = document.getElementById('rec-nombre').value.trim();
-      const lote = document.getElementById('rec-lote').value.trim().toUpperCase();
       const fila = document.getElementById('rec-fila').value;
       const peso = parseFloat(document.getElementById('rec-peso').value);
       const cantidad = parseInt(document.getElementById('rec-cantidad').value);
 
-      const nuevos = [];
+      if (!lote) { alert('El lote del proveedor es obligatorio'); return; }
+
       for (let i = 0; i < cantidad; i++) {
-        state.contador++;
-        const serial = `BTO-${String(state.contador).padStart(5, '0')}`;
-        const bulto = {
+        db.contador++;
+        const serial = `BTO-${String(db.contador).padStart(5, '0')}`;
+        db.bultos.push({
           id: crypto.randomUUID(),
           serial: serial,
-          codigoMaterial: codigo || mat.codigo,
-          nombreMaterial: nombre || mat.nombre,
+          codigoMaterial: mat.codigo,
+          nombreMaterial: mat.nombre,
           kilos: peso,
           kilosIniciales: peso,
           lote: lote,
@@ -776,939 +258,311 @@
           nivelApilado: 1,
           fechaCreacion: new Date().toISOString(),
           fechaIngresoBodega: null,
-          estado: "Creado",
-          ajustadoEnTurno: false
-        };
-        state.bultos.push(bulto);
-        nuevos.push(bulto);
+          estado: 'Creado'
+        });
       }
       guardarTodo();
-      ultimoLoteGenerado = nuevos;
-      renderizarEtiquetasBrother(nuevos);
-      document.getElementById('rec-lote').value = "";
-      validarFormularioCamion();
+      alert(`Se crearon ${cantidad} pallets. Ahora escanéalos en Entrada a Bodega para ingresarlos a stock.`);
+      document.getElementById('rec-lote').value = '';
     }
 
-    // --- MAPA VISUAL COMPACTO HORIZONTAL ---
-    function renderizarMapa() {
-      const cont = document.getElementById('mapa-filas-render');
-      const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
+    // --- BODEGA FIFO SEPARADO POR COMPONENTE ---
+    function renderizarBodega() {
+      const contenedor = document.getElementById('lista-fifo-componentes');
+      const enStock = db.bultos.filter(b => b.estado === 'En Stock');
 
-      cont.innerHTML = todas.map(fila => {
-        const esRet = (fila === nombreFilaRetornados);
-        const cfg = getConfigFila(fila);
-        const esRack = (!esRet && (cfg.tipo === "Rack" || state.versionApp === "V2"));
+      // Agrupación estricta por Nombre de Componente
+      const grupos = {};
+      enStock.forEach(b => {
+        if (!grupos[b.nombreMaterial]) grupos[b.nombreMaterial] = [];
+        grupos[b.nombreMaterial].push(b);
+      });
 
-        if (esRack) {
-          // MODO RACK (V2 COLORANTES / POSICIÓN ÚNICA COMPACTA HORIZONTAL)
-          const niveles = Math.max(1, parseInt(cfg.niveles) || 3);
-          const posPorNivel = Math.max(1, parseInt(cfg.posicionesPorNivel) || 4);
+      if (Object.keys(grupos).length === 0) {
+        contenedor.innerHTML = `<p style="color: #64748b; font-size: 0.85rem;">No hay componentes en stock.</p>`;
+        return;
+      }
 
-          let nivelesHtml = "";
-          for (let n = niveles; n >= 1; n--) {
-            let slotsNivel = "";
-            for (let p = 1; p <= posPorNivel; p++) {
-              // Código único permanente de la posición física en Rack
-              const codigoPosicion = `${fila.replace(/\s+/g, '')}-N${n}-P${p}`;
-              const ocupante = state.bultos.find(b =>
-                b.filaBodega === fila &&
-                b.nivelApilado === n &&
-                b.posicionFila === p &&
-                b.estado === 'En Stock'
-              );
-
-              const tieneStock = ocupante && ocupante.kilos > 0;
-              const pBolsa = ocupante ? (ocupante.pesoBolsa || 15) : 15;
-              const bls = tieneStock ? Math.round(ocupante.kilos / pBolsa) : 0;
-
-              slotsNivel += `
-                <div class="pallet-slot ${tieneStock ? 'cargado' : 'vacio'}" onclick="abrirOperacionPosicionRack('${codigoPosicion}', '${fila}', ${n}, ${p})">
-                  <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                    <span style="color: var(--blue); font-size: 0.7rem;">${codigoPosicion}</span>
-                    ${tieneStock ? '<span style="color: var(--green);">●</span>' : '<span style="color: var(--secondary-text);">○</span>'}
-                  </div>
-                  <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${tieneStock ? ocupante.nombreMaterial : 'Vacío'}
-                  </div>
-                  <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
-                    <span>${tieneStock ? ocupante.lote : '-'}</span>
-                    <b>${tieneStock ? `${ocupante.kilos.toFixed(0)}k (${bls}b)` : '0 kg'}</b>
-                  </div>
-                </div>
-              `;
-            }
-
-            nivelesHtml += `
-              <div class="pos-box" style="border-left: 3px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
-                <small style="font-size: 0.68rem; font-weight: bold; color: ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
-                  Nivel ${n} ${n === 1 ? '(Piso)' : ''}
-                </small>
-                <div class="rack-level-row">
-                  ${slotsNivel}
-                </div>
-              </div>
-            `;
-          }
-
-          return `
-            <div class="fila-col rack-col">
-              <div class="fila-header" style="background: rgba(0, 122, 255, 0.15); color: var(--blue);">
-                🗄️ ${fila} (RACK)<br>
-                <small style="font-size: 0.68rem; color: var(--secondary-text);">${niveles} Niveles x ${posPorNivel} Pos (Horizontal)</small>
-              </div>
-              ${nivelesHtml}
-            </div>
-          `;
-        }
-
-        // MODO PISO (V1 MATERIA PRIMA)
-        const palletsFila = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
-        const agrupados = {};
-        palletsFila.forEach(b => {
-          if (!agrupados[b.posicionFila]) agrupados[b.posicionFila] = [];
-          agrupados[b.posicionFila].push(b);
-        });
-        const maxPos = Math.max(Object.keys(agrupados).map(Number).reduce((a, b) => Math.max(a, b), 0), 4);
-        let posicionesHtml = "";
-
-        for (let p = 1; p <= maxPos; p++) {
-          const bultosPos = agrupados[p] || [];
-          const n1 = bultosPos.find(b => b.nivelApilado === 1) || bultosPos[0];
-          const n2 = bultosPos.find(b => b.nivelApilado === 2 && b !== n1);
-
-          posicionesHtml += `
-            <div class="pos-box">
-              <small style="font-size: 0.65rem; color: var(--secondary-text); font-weight: bold;">Pos ${p}</small>
-              ${renderSlotV1(n2, 'N2 (Arriba)')}
-              ${renderSlotV1(n1, 'N1 (Piso)')}
-            </div>
-          `;
-        }
+      contenedor.innerHTML = Object.keys(grupos).map(nombreMat => {
+        const lista = grupos[nombreMat].sort((a, b) => new Date(a.fechaIngresoBodega) - new Date(b.fechaIngresoBodega));
+        const prioritario = lista[0];
+        const totalKilos = lista.reduce((sum, p) => sum + p.kilos, 0);
 
         return `
-          <div class="fila-col">
-            <div class="fila-header">${fila}<br><small style="font-size: 0.68rem;">${palletsFila.length} pallets</small></div>
-            ${posicionesHtml}
+          <div class="card" style="border-left: 4px solid var(--warning);">
+            <div style="display: flex; justify-content: space-between;">
+              <div>
+                <strong>${nombreMat}</strong><br>
+                <small style="color: #64748b;">${prioritario.codigoMaterial}</small>
+              </div>
+              <div style="text-align: right;">
+                <span style="color: var(--primary); font-weight: bold;">${lista.length} pallets</span><br>
+                <small>${totalKilos} kg</small>
+              </div>
+            </div>
+
+            <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 10px; border-radius: 6px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 0.75rem; color: var(--warning); font-weight: bold;">PRIORITARIO FIFO:</span><br>
+                <strong style="font-size: 1.1rem; font-family: monospace;">${prioritario.serial}</strong><br>
+                <small>Lote: ${prioritario.lote} | Fila: <b>${prioritario.filaBodega}</b> (Pos ${prioritario.posicionFila} - N${prioritario.nivelApilado})</small>
+              </div>
+              <button class="btn btn-warning" onclick="abrirCamaraValidada('${prioritario.serial}', '${prioritario.filaBodega}')">Validar Salida</button>
+            </div>
           </div>
         `;
       }).join('');
     }
 
-    function renderSlotV1(pallet, label) {
-      if (!pallet) return `<div class="pallet-slot empty">Vacío (${label})</div>`;
-      const esFIFO = esPalletFIFOPrioritario(pallet.serial);
-      return `
-        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" onclick="verDetallePalletV1('${pallet.serial}')">
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>${pallet.serial}</span>
-            ${esFIFO ? '<span>⭐</span>' : ''}
-          </div>
-          <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pallet.nombreMaterial}</div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
-            <span>${pallet.lote}</span>
-            <b>${pallet.kilos.toFixed(0)} kg</b>
-          </div>
-        </div>
-      `;
-    }
+    // --- MAPA DE BODEGA CON NIVELES Y SECTOR RETORNADOS ---
+    function renderizarMapa() {
+      const contenedor = document.getElementById('mapa-bodega-filas');
+      const filasAMostrar = [...db.filas, "Retornados"];
 
-    // --- GESTIÓN DE POSICIÓN RACK (CARGAR / RETIRAR BOLSAS EN CÓDIGO ÚNICO) ---
-    let posicionRackSeleccionada = null;
-
-    function abrirOperacionPosicionRack(codigoPos, fila, nivel, pos) {
-      posicionRackSeleccionada = { codigoPos, fila, nivel, pos };
-      document.getElementById('op-rack-codigo-pos').value = codigoPos;
-      document.getElementById('op-rack-titulo').innerText = `Posición ${codigoPos}`;
-
-      const ocupante = state.bultos.find(b =>
-        b.filaBodega === fila &&
-        b.nivelApilado === nivel &&
-        b.posicionFila === pos &&
-        b.estado === 'En Stock'
-      );
-
-      const selMat = document.getElementById('op-rack-material-select');
-      selMat.innerHTML = state.catalogo.map(c => `<option value="${c.nombre}">${c.nombre} (${c.codigo})</option>`).join('');
-
-      if (ocupante && ocupante.kilos > 0) {
-        document.getElementById('op-rack-subtitulo').innerText = `Stock: ${ocupante.kilos.toFixed(1)} kg (${ocupante.nombreMaterial} • Lote: ${ocupante.lote})`;
-        selMat.value = ocupante.nombreMaterial;
-        document.getElementById('op-rack-lote').value = ocupante.lote;
-        document.getElementById('op-rack-peso-bolsa').value = ocupante.pesoBolsa || 15;
-      } else {
-        document.getElementById('op-rack-subtitulo').innerText = "Posición vacía (0 kg). Asigna material y carga bolsas.";
-        document.getElementById('op-rack-lote').value = "";
-        actualizarValoresBolsaRack();
-      }
-
-      setModoOperarRack('CARGAR');
-      recalcularKilosCargaRack();
-      abrirModal('modal-operar-posicion-rack');
-    }
-
-    function setModoOperarRack(modo) {
-      const formCargar = document.getElementById('form-rack-cargar');
-      const formRetirar = document.getElementById('form-rack-retirar');
-      const btnCargar = document.getElementById('btn-tab-op-cargar');
-      const btnRetirar = document.getElementById('btn-tab-op-retirar');
-
-      if (modo === 'CARGAR') {
-        formCargar.style.display = 'block';
-        formRetirar.style.display = 'none';
-        btnCargar.className = 'btn btn-green';
-        btnRetirar.className = 'btn btn-bordered';
-      } else {
-        formCargar.style.display = 'none';
-        formRetirar.style.display = 'block';
-        btnCargar.className = 'btn btn-bordered';
-        btnRetirar.className = 'btn btn-orange';
-        recalcularKilosRetiroRack();
-      }
-    }
-
-    function actualizarValoresBolsaRack() {
-      const matNombre = document.getElementById('op-rack-material-select').value;
-      const mat = obtenerMaterialPorNombre(matNombre);
-      if (mat) {
-        document.getElementById('op-rack-peso-bolsa').value = mat.pesoBolsaDefault || 15;
-        document.getElementById('op-rack-cant-bolsas').value = mat.bolsasPorPallet || 25;
-      }
-      recalcularKilosCargaRack();
-    }
-
-    function recalcularKilosCargaRack() {
-      const bls = parseFloat(document.getElementById('op-rack-cant-bolsas').value) || 0;
-      const pBolsa = parseFloat(document.getElementById('op-rack-peso-bolsa').value) || 0;
-      document.getElementById('op-rack-total-kilos-txt').innerText = `Total a sumar: ${(bls * pBolsa).toFixed(1)} kg`;
-    }
-
-    function setBolsasRetiroDirecto(num) {
-      document.getElementById('op-rack-retirar-bolsas').value = num;
-      recalcularKilosRetiroRack();
-    }
-
-    function recalcularKilosRetiroRack() {
-      if (!posicionRackSeleccionada) return;
-      const { fila, nivel, pos } = posicionRackSeleccionada;
-      const ocupante = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
-
-      const bls = parseInt(document.getElementById('op-rack-retirar-bolsas').value) || 0;
-      const pBolsa = ocupante ? (ocupante.pesoBolsa || 15) : 15;
-      const kilosRetiro = bls * pBolsa;
-      const saldoRestante = ocupante ? Math.max(0, ocupante.kilos - kilosRetiro) : 0;
-
-      const txt = document.getElementById('op-rack-retiro-kilos-txt');
-      if (!ocupante || ocupante.kilos <= 0) {
-        txt.style.color = 'var(--red)';
-        txt.innerText = "⚠️ La posición está vacía. No hay bolsas que retirar.";
-      } else if (kilosRetiro > ocupante.kilos) {
-        txt.style.color = 'var(--red)';
-        txt.innerText = `⚠️ Excede el saldo disponible (${ocupante.kilos.toFixed(1)} kg disponibles).`;
-      } else {
-        txt.style.color = 'var(--green)';
-        txt.innerText = `Se retirarán ${bls} bolsa(s) = ${kilosRetiro.toFixed(1)} kg. Saldo restante: ${saldoRestante.toFixed(1)} kg.`;
-      }
-    }
-
-    function confirmarCargaBolsasRack() {
-      if (!posicionRackSeleccionada) return;
-      const { codigoPos, fila, nivel, pos } = posicionRackSeleccionada;
-      const matNombre = document.getElementById('op-rack-material-select').value;
-      const lote = document.getElementById('op-rack-lote').value.trim().toUpperCase() || "LOTE-RACK";
-      const bls = parseInt(document.getElementById('op-rack-cant-bolsas').value) || 0;
-      const pBolsa = parseFloat(document.getElementById('op-rack-peso-bolsa').value) || 0;
-      const kilosSumar = bls * pBolsa;
-
-      if (bls <= 0 || pBolsa <= 0 || kilosSumar <= 0) {
-        alert("Ingresa valores válidos de bolsas y peso.");
-        return;
-      }
-
-      const matCat = obtenerMaterialPorNombre(matNombre);
-      let bultoPos = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
-
-      if (!bultoPos) {
-        bultoPos = {
-          id: crypto.randomUUID(),
-          serial: codigoPos,
-          codigoMaterial: matCat ? matCat.codigo : "COL",
-          nombreMaterial: matNombre,
-          kilos: kilosSumar,
-          kilosIniciales: kilosSumar,
-          bolsasPorPallet: bls,
-          pesoBolsa: pBolsa,
-          lote: lote,
-          filaBodega: fila,
-          nivelApilado: nivel,
-          posicionFila: pos,
-          fechaCreacion: new Date().toISOString(),
-          fechaIngresoBodega: new Date().toISOString(),
-          estado: "En Stock"
-        };
-        state.bultos.push(bultoPos);
-      } else {
-        bultoPos.kilos += kilosSumar;
-        bultoPos.nombreMaterial = matNombre;
-        bultoPos.codigoMaterial = matCat ? matCat.codigo : bultoPos.codigoMaterial;
-        bultoPos.lote = lote;
-        bultoPos.pesoBolsa = pBolsa;
-      }
-
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: codigoPos,
-        nombreMaterial: matNombre,
-        kilos: kilosSumar,
-        tipo: "CARGA / REPOSICIÓN RACK",
-        detalle: `Se cargaron ${bls} bolsa(s) de ${pBolsa} kg (+${kilosSumar.toFixed(1)} kg) en ${codigoPos}. Saldo total: ${bultoPos.kilos.toFixed(1)} kg`
-      });
-
-      guardarTodo();
-      cerrarModal('modal-operar-posicion-rack');
-      renderizarMapa();
-      renderizarBodega();
-      alert(`✅ Carga guardada exitosamente en ${codigoPos}: +${kilosSumar.toFixed(1)} kg.`);
-    }
-
-    function confirmarRetiroBolsasRack() {
-      if (!posicionRackSeleccionada) return;
-      const { codigoPos, fila, nivel, pos } = posicionRackSeleccionada;
-      const bultoPos = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
-
-      if (!bultoPos || bultoPos.kilos <= 0) {
-        alert("La posición está vacía.");
-        return;
-      }
-
-      const bls = parseInt(document.getElementById('op-rack-retirar-bolsas').value) || 0;
-      const pBolsa = bultoPos.pesoBolsa || 15;
-      const kilosRetiro = bls * pBolsa;
-
-      if (bls <= 0 || kilosRetiro <= 0 || kilosRetiro > bultoPos.kilos) {
-        alert("Cantidad no válida de bolsas a retirar.");
-        return;
-      }
-
-      bultoPos.kilos = Math.max(0, bultoPos.kilos - kilosRetiro);
-
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: codigoPos,
-        nombreMaterial: bultoPos.nombreMaterial,
-        kilos: kilosRetiro,
-        tipo: "RETIRO A PRODUCCIÓN",
-        detalle: `Retiro de ${bls} bolsa(s) (${kilosRetiro.toFixed(1)} kg) desde ${codigoPos}. Saldo restante: ${bultoPos.kilos.toFixed(1)} kg`
-      });
-
-      // Crear registro en Tránsito de Planta
-      state.contador++;
-      state.bultos.push({
-        id: crypto.randomUUID(),
-        serial: `PLT-${String(state.contador).padStart(5, '0')}`,
-        codigoMaterial: bultoPos.codigoMaterial,
-        nombreMaterial: bultoPos.nombreMaterial,
-        kilos: kilosRetiro,
-        kilosIniciales: kilosRetiro,
-        pesoBolsa: pBolsa,
-        lote: bultoPos.lote,
-        filaBodega: "Planta / Operación",
-        posicionFila: 1,
-        nivelApilado: 1,
-        fechaCreacion: new Date().toISOString(),
-        fechaIngresoBodega: new Date().toISOString(),
-        estado: "En Tránsito"
-      });
-
-      guardarTodo();
-      cerrarModal('modal-operar-posicion-rack');
-      renderizarMapa();
-      renderizarBodega();
-      renderizarProduccion();
-      alert(`📤 Retiro exitoso: ${bls} bolsa(s) enviadas a Planta. Saldo en ${codigoPos}: ${bultoPos.kilos.toFixed(1)} kg.`);
-    }
-
-    function imprimirEtiquetaPosicionRack() {
-      if (!posicionRackSeleccionada) return;
-      const { codigoPos } = posicionRackSeleccionada;
-      generarPDFEtiquetasRack([codigoPos]);
-    }
-
-    function imprimirCodigosRackFijosPDF() {
-      const codigos = [];
-      const todas = state.filasBodega.filter(f => f !== nombreFilaRetornados);
-      todas.forEach(f => {
-        const cfg = getConfigFila(f);
-        const niv = parseInt(cfg.niveles) || 3;
-        const pos = parseInt(cfg.posicionesPorNivel) || 4;
-        for (let n = 1; n <= niv; n++) {
-          for (let p = 1; p <= pos; p++) {
-            codigos.push(`${f.replace(/\s+/g, '')}-N${n}-P${p}`);
+      contenedor.innerHTML = filasAMostrar.map(fila => {
+        const esRet = (fila === "Retornados");
+        const palletsFila = db.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
+        
+        // Agrupar por posición
+        const posiciones = {};
+        for (let p = 1; p <= 6; p++) posiciones[p] = { n1: null, n2: null };
+        palletsFila.forEach(b => {
+          if (posiciones[b.posicionFila]) {
+            if (b.nivelApilado === 1) posiciones[b.posicionFila].n1 = b;
+            else posiciones[b.posicionFila].n2 = b;
           }
-        }
-      });
-      generarPDFEtiquetasRack(codigos);
-    }
+        });
 
-    function generarPDFEtiquetasRack(codigos) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [62, 50] });
-
-      codigos.forEach((cod, i) => {
-        if (i > 0) doc.addPage([62, 50], "portrait");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text("POSICIÓN RACK", 31, 8, { align: "center" });
-
-        const canvas = document.createElement("canvas");
-        JsBarcode(canvas, cod, { format: "CODE128", displayValue: false, margin: 0 });
-        doc.addImage(canvas.toDataURL("image/png"), "PNG", 6, 12, 50, 20);
-
-        doc.setFont("courier", "bold");
-        doc.setFontSize(13);
-        doc.text(cod, 31, 40, { align: "center" });
-      });
-
-      doc.save(`Etiquetas_Rack_Fijas.pdf`);
-    }
-
-    // --- BODEGA Y ESCANEO ---
-    function setModoOperacion(modo) {
-      state.modoOperacion = modo;
-      const esEntrada = (modo === 'ENTRADA BODEGA');
-      document.getElementById('btn-modo-entrada').className = esEntrada ? 'btn btn-green' : 'btn btn-bordered';
-      document.getElementById('btn-modo-despacho').className = esEntrada ? 'btn btn-bordered' : 'btn btn-orange';
-
-      const banner = document.getElementById('banner-modo');
-      banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
-      banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
-      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO A BODEGA';
-      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock sellando su fecha FIFO.' : 'Despacha pallets completos o por bolsas a producción.';
-
-      document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
-      if (!esEntrada) renderizarBodega();
-    }
-
-    function renderizarBodega() {
-      const cont = document.getElementById('contenedor-fifo-listas');
-      const componentes = obtenerListasFIFOPorComponente();
-
-      if (componentes.length === 0) {
-        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay componentes en stock.</small>`;
-      } else {
-        cont.innerHTML = componentes.map(g => `
-          <div class="card" style="border-left: 4px solid ${g.usaFIFO ? 'var(--orange)' : 'var(--blue)'};">
-            <div style="display: flex; justify-content: space-between;">
-              <div>
-                <strong>${g.nombreMaterial}</strong><br>
-                <small style="color: var(--secondary-text);">${g.codigoMaterial} • ${g.usaFIFO ? 'FIFO Activo' : 'FIFO Desactivado'}</small>
-              </div>
-              <div style="text-align: right;">
-                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} unidades</b><br>
-                <small>${g.totalKilos.toFixed(0)} kg</small>
-              </div>
+        const htmlPosiciones = Object.keys(posiciones).map(p => {
+          const slot = posiciones[p];
+          return `
+            <div class="pos-box">
+              <small style="color: #64748b; font-weight: bold;">Pos ${p}</small>
+              ${renderSlot(slot.n2, 'N2 (Arriba)', esRet)}
+              ${renderSlot(slot.n1, 'N1 (Piso)', esRet)}
             </div>
+          `;
+        }).join('');
 
-            ${g.usaFIFO && g.palletPrioritario ? `
-              <div style="background: rgba(255, 149, 0, 0.1); border-radius: 6px; padding: 8px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <small style="color: var(--orange); font-weight: bold;">PRIORITARIO FIFO: ${g.palletPrioritario.serial}</small><br>
-                  <small>${g.palletPrioritario.filaBodega} • ${g.palletPrioritario.kilos.toFixed(0)} kg</small>
-                </div>
-                <button class="btn btn-orange" onclick="procesarEscaneoBodega('${g.palletPrioritario.serial}')">Despachar</button>
-              </div>
-            ` : ''}
+        return `
+          <div class="fila-col" style="${esRet ? 'border: 2px solid var(--purple); background: #faf5ff;' : ''}">
+            <div class="fila-header" style="${esRet ? 'color: var(--purple);' : ''}">${fila} (${palletsFila.length})</div>
+            ${htmlPosiciones}
           </div>
-        `).join('');
-      }
-
-      const regCont = document.getElementById('lista-ultimos-registros');
-      regCont.innerHTML = state.movimientos.slice(0, 3).map(m => `
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 0.5px solid var(--border); padding: 4px 0;">
-          <div><b>${m.serialBulto} • ${m.nombreMaterial}</b><br><small style="color: var(--secondary-text);">${m.detalle}</small></div>
-          <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    function procesarEscaneoBodega(serial) {
-      // Buscar bulto o posición
-      const bulto = state.bultos.find(b => b.serial === serial && b.estado === 'En Stock');
-
-      if (!bulto) {
-        // En V2 Colorantes, puede ser el código fijo de una posición
-        if (state.versionApp === "V2") {
-          const match = serial.match(/^(.+)-N(\d+)-P(\d+)$/);
-          if (match) {
-            abrirOperacionPosicionRack(serial, match[1], parseInt(match[2]), parseInt(match[3]));
-            return;
-          }
-        }
-        alert(`El código '${serial}' no existe o no está en stock.`);
-        return;
-      }
-
-      if (state.versionApp === "V2") {
-        abrirOperacionPosicionRack(bulto.serial, bulto.filaBodega, bulto.nivelApilado, bulto.posicionFila);
-        return;
-      }
-
-      // En V1 Materia Prima: Despacho tradicional a Producción
-      bulto.estado = "En Tránsito";
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: bulto.serial,
-        nombreMaterial: bulto.nombreMaterial,
-        kilos: bulto.kilos,
-        tipo: "DESPACHO A PRODUCCIÓN",
-        detalle: `Salida de ${bulto.serial} (${bulto.kilos.toFixed(1)} kg) a Planta`
-      });
-
-      guardarTodo();
-      renderizarBodega();
-      alert(`Pallet ${serial} despachado a Producción.`);
-    }
-
-    function validarManual() {
-      const input = document.getElementById('serial-manual');
-      const val = input.value.trim().toUpperCase();
-      if (val) {
-        procesarEscaneoBodega(val);
-        input.value = "";
-      }
-    }
-
-    function verDetallePalletV1(serial) {
-      const b = state.bultos.find(x => x.serial === serial);
-      if (!b) return;
-      document.getElementById('render-datos-detalle').innerHTML = `
-        <div class="card">
-          <h4>${b.serial} - ${b.nombreMaterial}</h4>
-          <p>Kilos: ${b.kilos.toFixed(1)} kg</p>
-          <p>Fila: ${b.filaBodega} (Pos ${b.posicionFila})</p>
-          <p>Lote: ${b.lote}</p>
+    function renderSlot(pallet, nivelTexto, esRet) {
+      if (!pallet) return `<div class="pallet-slot empty">Vacío (${nivelTexto})</div>`;
+      return `
+        <div class="pallet-slot ${esRet ? 'retornado' : ''}" style="background: #e0f2fe; border: 1px solid var(--primary);">
+          <strong>${pallet.serial}</strong><br>
+          <span style="font-size: 0.7rem;">${pallet.nombreMaterial.substring(0, 18)}...</span><br>
+          <small>${pallet.kilos} kg | Lote: ${pallet.lote}</small>
         </div>
       `;
-      abrirModal('modal-pallet-mapa');
     }
 
-    function compactarPosiciones() {
-      alert("Bodega compactada.");
+    // --- COMPACTAR PASILLOS ---
+    function compactarPasillos() {
+      const filasACompactar = [...db.filas, "Retornados"];
+      filasACompactar.forEach(fila => {
+        const palletsFila = db.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock')
+          .sort((a, b) => (a.posicionFila - b.posicionFila) || (a.nivelApilado - b.nivelApilado));
+
+        let posActual = 1;
+        let nivelActual = 1;
+
+        palletsFila.forEach(p => {
+          p.posicionFila = posActual;
+          p.nivelApilado = nivelActual;
+          if (nivelActual === 1) {
+            nivelActual = 2;
+          } else {
+            nivelActual = 1;
+            posActual++;
+          }
+        });
+      });
+      guardarTodo();
       renderizarMapa();
+      alert('Pasillos compactados hacia el frente.');
     }
 
     // --- PLANTA / PRODUCCIÓN ---
-    function renderizarProduccion() {
-      const cont = document.getElementById('lista-pallets-planta');
-      const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
+    function renderizarPlanta() {
+      const contenedor = document.getElementById('lista-pallets-planta');
+      const enPlanta = db.bultos.filter(b => b.estado === 'En Tránsito');
+      document.getElementById('planta-kilos').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0)} kg en tránsito`;
 
-      if (enPlanta.length === 0) {
-        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay material en producción.</small>`;
-      } else {
-        cont.innerHTML = enPlanta.map(b => `
-          <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <b>${b.serial}</b><br>
-              <span style="font-size: 0.8rem;">${b.nombreMaterial}</span><br>
-              <small style="color: var(--secondary-text);">Lote: ${b.lote}</small>
-            </div>
-            <div style="text-align: right;">
-              <b style="color: var(--purple);">${b.kilos.toFixed(1)} kg</b><br>
-              <button class="btn btn-red" style="font-size: 0.68rem; padding: 4px 6px; margin-top: 4px;" onclick="consumirBultoPlanta('${b.serial}')">Consumir</button>
-            </div>
+      contenedor.innerHTML = enPlanta.map(b => `
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${b.serial} - ${b.nombreMaterial}</strong><br>
+            <small>Lote: ${b.lote} | Actual: <b>${b.kilos} kg</b></small>
           </div>
-        `).join('');
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-warning" onclick="pesarPallet('${b.serial}')">Pesar</button>
+            <button class="btn btn-purple" onclick="retornarPallet('${b.serial}')">A Bodega</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function pesarPallet(serial) {
+      const b = db.bultos.find(x => x.serial === serial);
+      const peso = prompt(`Ingrese los kilos restantes de ${serial}:`, b.kilos);
+      if (peso !== null && !isNaN(parseFloat(peso))) {
+        b.kilos = parseFloat(peso);
+        if (b.kilos <= 0) b.estado = 'Consumido';
+        guardarTodo();
+        renderizarPlanta();
       }
     }
 
-    function consumirBultoPlanta(serial) {
-      const b = state.bultos.find(x => x.serial === serial);
-      if (!b) return;
-      b.estado = "Consumido";
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: b.serial,
-        nombreMaterial: b.nombreMaterial,
-        kilos: b.kilos,
-        tipo: "CONSUMO FINAL",
-        detalle: `Consumido totalmente en planta (-${b.kilos.toFixed(1)} kg)`
-      });
+    function retornarPallet(serial) {
+      const b = db.bultos.find(x => x.serial === serial);
+      b.estado = 'En Stock';
+      b.filaBodega = 'Retornados';
+      b.fechaIngresoBodega = new Date().toISOString();
+
+      // Asignar primera posición libre en retornados
+      const ret = db.bultos.filter(x => x.filaBodega === 'Retornados' && x.estado === 'En Stock');
+      b.posicionFila = Math.ceil(ret.length / 2) || 1;
+      b.nivelApilado = (ret.length % 2 === 0) ? 2 : 1;
+
       guardarTodo();
-      renderizarProduccion();
+      renderizarPlanta();
+      alert(`${serial} enviado al sector Retornados de Bodega.`);
     }
 
-    function consumirRestantes() {
-      if (!confirm("¿Consumir todo lo que está en planta?")) return;
-      state.bultos.filter(b => b.estado === 'En Tránsito').forEach(b => {
-        b.estado = "Consumido";
-      });
-      guardarTodo();
-      renderizarProduccion();
+    // --- ESCÁNER DE CÁMARA ---
+    let html5QrCode;
+    let objetivoEsperado = null;
+
+    function abrirCamara(modo) {
+      objetivoEsperado = null;
+      document.getElementById('scanner-label').innerText = `MODO: ${modo}`;
+      document.getElementById('scanner-modal').style.display = 'flex';
+      iniciarScanner(modo);
     }
 
-    // --- INVENTARIO GENERAL ---
-    function renderizarInventario() {
-      const filtro = document.getElementById('inv-filtro-estado').value;
-      const cont = document.getElementById('lista-inventario-agrupado');
-      const filtrados = (filtro === "Todos") ? state.bultos : state.bultos.filter(b => b.estado === filtro);
-
-      cont.innerHTML = filtrados.map(b => `
-        <div class="card" style="display: flex; justify-content: space-between; padding: 8px 12px;">
-          <div>
-            <b>${b.serial}</b> - ${b.nombreMaterial}<br>
-            <small style="color: var(--secondary-text);">${b.filaBodega} • Lote: ${b.lote} • Estado: ${b.estado}</small>
-          </div>
-          <b>${b.kilos.toFixed(1)} kg</b>
-        </div>
-      `).join('');
+    function abrirCamaraValidada(serial, fila) {
+      objetivoEsperado = serial;
+      document.getElementById('scanner-label').innerText = `DEBES VALIDAR: ${serial} en [${fila}]`;
+      document.getElementById('scanner-modal').style.display = 'flex';
+      iniciarScanner('DESPACHO');
     }
 
-    function borrarCreadosNoEscaneados() {
-      state.bultos = state.bultos.filter(b => b.estado !== 'Creado');
-      guardarTodo();
-      renderizarInventario();
+    function iniciarScanner(modo) {
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        codigoLeido => procesarEscaneo(codigoLeido.trim().toUpperCase(), modo)
+      ).catch(err => alert("Error al iniciar cámara: " + err));
     }
 
-    // --- AUDITORÍA ---
-    function renderizarAuditoria() {
-      const cont = document.getElementById('lista-auditoria-agrupada');
-      cont.innerHTML = state.movimientos.map(m => `
-        <div class="card" style="padding: 8px 12px; margin-bottom: 6px;">
-          <div style="display: flex; justify-content: space-between;">
-            <b>${m.tipo}</b>
-            <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleString()}</small>
-          </div>
-          <p style="font-size: 0.8rem; margin-top: 4px;">${m.serialBulto} • ${m.nombreMaterial}: ${m.detalle}</p>
-        </div>
-      `).join('');
+    function cerrarCamara() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('scanner-modal').style.display = 'none';
+        });
+      }
     }
 
-    // --- CONFIGURACIÓN FILAS Y CATÁLOGO ---
-    function toggleOpcionesRackNuevaFila() {
-      const tipo = document.getElementById('nueva-fila-tipo').value;
-      document.getElementById('opciones-nueva-fila-rack').style.display = (tipo === 'Rack') ? 'flex' : 'none';
+    function procesarEscaneo(codigo, modo) {
+      cerrarCamara();
+      const b = db.bultos.find(x => x.serial === codigo);
+      if (!b) { alert(`El código ${codigo} no existe.`); return; }
+
+      if (modo === 'ENTRADA') {
+        b.estado = 'En Stock';
+        b.fechaIngresoBodega = new Date().toISOString();
+        guardarTodo();
+        alert(`Entrada registrada para ${b.serial}`);
+        renderizarBodega();
+      } else {
+        if (objetivoEsperado && objetivoEsperado !== codigo) {
+          alert(`ERROR FIFO: Escaneaste ${codigo}, pero debes despachar primero ${objetivoEsperado}`);
+          return;
+        }
+        b.estado = 'En Tránsito';
+        guardarTodo();
+        alert(`Despacho validado para ${b.serial}`);
+        renderizarBodega();
+      }
     }
 
-    function renderizarGestionFilas() {
+    // --- REORDENAMIENTO DE FILAS ---
+    function renderizarFilasGestion() {
       const cont = document.getElementById('lista-filas-gestion');
-      cont.innerHTML = state.filasBodega.map(f => {
-        const cfg = getConfigFila(f);
-        return `
-          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
-            <span><b>${f}</b> (${cfg.tipo} - ${cfg.niveles || 2}N x ${cfg.posicionesPorNivel || 4}P)</span>
-            <button class="btn btn-red" style="padding: 2px 6px; font-size: 0.7rem;" onclick="eliminarFila('${f}')">✕</button>
+      cont.innerHTML = db.filas.map((f, i) => `
+        <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border);">
+          <span>${f}</span>
+          <div>
+            <button class="btn btn-primary" style="padding: 4px 8px;" onclick="moverFila(${i}, -1)">▲</button>
+            <button class="btn btn-primary" style="padding: 4px 8px;" onclick="moverFila(${i}, 1)">▼</button>
+            <button class="btn btn-danger" style="padding: 4px 8px;" onclick="borrarFila('${f}')">✕</button>
           </div>
-        `;
-      }).join('');
-
-      const catCont = document.getElementById('lista-catalogo-gestion');
-      catCont.innerHTML = state.catalogo.map(c => `
-        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
-          <div><b>${c.nombre}</b><br><small style="color: var(--secondary-text);">${c.codigo} • ${c.pesoDefault} kg</small></div>
-          <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
         </div>
       `).join('');
-    }
-
-    function toggleModoEditarFilas() {
-      modoEdicionFilas = !modoEdicionFilas;
-      renderizarGestionFilas();
     }
 
     function agregarFila() {
-      const nombre = document.getElementById('nueva-fila-nombre').value.trim();
-      const tipo = document.getElementById('nueva-fila-tipo').value;
-      const niveles = parseInt(document.getElementById('nueva-fila-niveles').value) || 3;
-      const posiciones = parseInt(document.getElementById('nueva-fila-posiciones').value) || 4;
-
-      if (!nombre) return;
-      if (!state.filasBodega.includes(nombre)) {
-        state.filasBodega.push(nombre);
-        state.configFilas[nombre] = { tipo, niveles, posicionesPorNivel: posiciones };
+      const nom = document.getElementById('nueva-fila-nombre').value.trim();
+      if (nom && !db.filas.includes(nom)) {
+        db.filas.push(nom);
         guardarTodo();
-        poblarSelectores();
-        renderizarGestionFilas();
-        document.getElementById('nueva-fila-nombre').value = "";
+        renderizarFilasGestion();
+        poblarSelects();
+        document.getElementById('nueva-fila-nombre').value = '';
       }
     }
 
-    function eliminarFila(nombre) {
-      state.filasBodega = state.filasBodega.filter(f => f !== nombre);
-      delete state.configFilas[nombre];
-      guardarTodo();
-      poblarSelectores();
-      renderizarGestionFilas();
-    }
-
-    // --- CATÁLOGO ---
-    function abrirModalMaterial(id) {
-      document.getElementById('editor-mat-id').value = id || "";
-      if (id) {
-        const m = state.catalogo.find(x => x.id === id);
-        document.getElementById('editor-mat-codigo').value = m.codigo;
-        document.getElementById('editor-mat-nombre').value = m.nombre;
-        document.getElementById('editor-mat-peso').value = m.pesoDefault;
-        document.getElementById('editor-mat-bolsas').value = m.bolsasPorPallet || 25;
-        document.getElementById('editor-mat-peso-bolsa').value = m.pesoBolsaDefault || 15;
-      } else {
-        document.getElementById('editor-mat-codigo').value = "";
-        document.getElementById('editor-mat-nombre').value = "";
-        document.getElementById('editor-mat-peso').value = 375;
-        document.getElementById('editor-mat-bolsas').value = 25;
-        document.getElementById('editor-mat-peso-bolsa').value = 15;
-      }
-      abrirModal('modal-editor-material');
-    }
-
-    function calcularPesoDesdeBolsasEditor() {
-      const b = parseFloat(document.getElementById('editor-mat-bolsas').value) || 0;
-      const pb = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 0;
-      document.getElementById('editor-mat-peso').value = (b * pb).toFixed(1);
-    }
-
-    function guardarMaterialCatalogo() {
-      const id = document.getElementById('editor-mat-id').value;
-      const codigo = document.getElementById('editor-mat-codigo').value.trim().toUpperCase();
-      const nombre = document.getElementById('editor-mat-nombre').value.trim();
-      const peso = parseFloat(document.getElementById('editor-mat-peso').value) || 0;
-      const bls = parseInt(document.getElementById('editor-mat-bolsas').value) || 25;
-      const pb = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 15;
-
-      if (!codigo || !nombre) return;
-
-      if (id) {
-        const m = state.catalogo.find(x => x.id === id);
-        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.bolsasPorPallet = bls; m.pesoBolsaDefault = pb;
-      } else {
-        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, bolsasPorPallet: bls, pesoBolsaDefault: pb, usaFIFO: true });
-      }
-      guardarTodo();
-      poblarSelectores();
-      renderizarGestionFilas();
-      cerrarModal('modal-editor-material');
-    }
-
-    function eliminarMaterialCatalogo() {
-      const id = document.getElementById('editor-mat-id').value;
-      state.catalogo = state.catalogo.filter(x => x.id !== id);
-      guardarTodo();
-      poblarSelectores();
-      renderizarGestionFilas();
-      cerrarModal('modal-editor-material');
-    }
-
-    // --- CARGA EXCEL ---
-    function descargarPlantillaCatalogoExcel() {
-      const datos = [{ Codigo: "COL001", Nombre: "Colorante Azul", BolsasPorPallet: 25, PesoPorBolsa: 15, PesoTotal: 375 }];
-      const ws = XLSX.utils.json_to_sheet(datos);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Catalogo");
-      XLSX.writeFile(wb, "Plantilla_Catalogo.xlsx");
-    }
-
-    function importarCatalogoExcel(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-        filas.forEach(r => {
-          const cod = String(r.Codigo || r.codigo || "").trim().toUpperCase();
-          const nom = String(r.Nombre || r.nombre || "").trim();
-          if (cod && nom) {
-            state.catalogo.push({
-              id: crypto.randomUUID(),
-              codigo: cod,
-              nombre: nom,
-              pesoDefault: parseFloat(r.PesoTotal || 375),
-              bolsasPorPallet: parseInt(r.BolsasPorPallet || 25),
-              pesoBolsaDefault: parseFloat(r.PesoPorBolsa || 15),
-              usaFIFO: true
-            });
-          }
-        });
+    function moverFila(idx, dir) {
+      const nuevoIdx = idx + dir;
+      if (nuevoIdx >= 0 && nuevoIdx < db.filas.length) {
+        const temp = db.filas[idx];
+        db.filas[idx] = db.filas[nuevoIdx];
+        db.filas[nuevoIdx] = temp;
         guardarTodo();
-        poblarSelectores();
-        renderizarGestionFilas();
-        alert("Catálogo cargado desde Excel.");
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function descargarPlantillaRecepcionExcel() {
-      const datos = [{ Codigo: "RMGE00007", Nombre: "Material PA6", Lote: "LOT-01", Fila: "Fila 1", CantidadPallets: 10, PesoTotalPallet: 1200 }];
-      const ws = XLSX.utils.json_to_sheet(datos);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Recepcion");
-      XLSX.writeFile(wb, "Plantilla_Recepcion.xlsx");
-    }
-
-    function importarRecepcionExcel(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-        const nuevos = [];
-        filas.forEach(r => {
-          const cod = String(r.Codigo || "").trim().toUpperCase();
-          const nom = String(r.Nombre || "").trim();
-          const lote = String(r.Lote || "LOTE").trim().toUpperCase();
-          const fila = String(r.Fila || "Fila 1").trim();
-          const cant = parseInt(r.CantidadPallets || 1);
-          const peso = parseFloat(r.PesoTotalPallet || 1200);
-
-          for (let i = 0; i < cant; i++) {
-            state.contador++;
-            const b = {
-              id: crypto.randomUUID(),
-              serial: `BTO-${String(state.contador).padStart(5, '0')}`,
-              codigoMaterial: cod,
-              nombreMaterial: nom,
-              kilos: peso,
-              kilosIniciales: peso,
-              lote: lote,
-              filaBodega: fila,
-              posicionFila: 1,
-              nivelApilado: 1,
-              fechaCreacion: new Date().toISOString(),
-              fechaIngresoBodega: null,
-              estado: "Creado"
-            };
-            state.bultos.push(b);
-            nuevos.push(b);
-          }
-        });
-        guardarTodo();
-        ultimoLoteGenerado = nuevos;
-        renderizarEtiquetasBrother(nuevos);
-        alert(`Recepcionados ${nuevos.length} pallets.`);
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function renderizarEtiquetasBrother(pallets) {
-      const cont = document.getElementById('contenedor-etiquetas-brother');
-      cont.innerHTML = pallets.map(b => `
-        <div class="etiqueta-brother">
-          <h4>${b.nombreMaterial}</h4>
-          <p>CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
-          <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
-          <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900;">${b.serial}</p>
-          <div style="border-top: 1px solid black; padding-top: 4px;"><b>${b.kilos.toFixed(1)} kg</b></div>
-        </div>
-      `).join('');
-
-      pallets.forEach(b => {
-        JsBarcode(`#svg-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
-      });
-      abrirModal('modal-etiquetas');
-    }
-
-    function descargarLotePDF() {
-      if (!ultimoLoteGenerado.length) return;
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [62, 100] });
-
-      ultimoLoteGenerado.forEach((b, i) => {
-        if (i > 0) doc.addPage([62, 100], "portrait");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text(b.nombreMaterial, 31, 8, { align: "center" });
-        doc.setFontSize(6.5);
-        doc.text(`CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}`, 31, 20, { align: "center" });
-
-        const canvas = document.createElement("canvas");
-        JsBarcode(canvas, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
-        doc.addImage(canvas.toDataURL("image/png"), "PNG", 6, 26, 50, 24);
-
-        doc.setFont("courier", "bold");
-        doc.setFontSize(11);
-        doc.text(b.serial, 31, 56, { align: "center" });
-        doc.setFontSize(13);
-        doc.text(`${b.kilos.toFixed(1)} kg`, 31, 75, { align: "center" });
-      });
-      doc.save("Etiquetas_62mm.pdf");
-    }
-
-    // --- CÁMARA HTML5 ---
-    function abrirCamara(objetivo) {
-      palletObjetivoFIFO = objetivo;
-      abrirModal('modal-scanner');
-      scannerActivo = new Html5Qrcode("reader");
-      scannerActivo.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 240 },
-        code => {
-          cerrarScanner();
-          procesarEscaneoBodega(code.trim().toUpperCase());
-        }
-      ).catch(() => cerrarScanner());
-    }
-
-    function abrirCamaraPlanta() {
-      abrirCamara(null);
-    }
-
-    function cerrarScanner() {
-      if (scannerActivo) {
-        scannerActivo.stop().then(() => {
-          scannerActivo.clear();
-          cerrarModal('modal-scanner');
-        }).catch(() => cerrarModal('modal-scanner'));
-      } else {
-        cerrarModal('modal-scanner');
+        renderizarFilasGestion();
       }
     }
 
-    function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
-    function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
+    function borrarFila(f) {
+      db.filas = db.filas.filter(x => x !== f);
+      guardarTodo();
+      renderizarFilasGestion();
+      poblarSelects();
+    }
 
+    // --- EXPORTACIÓN ---
     function exportarCSV() {
-      let csv = "\uFEFFID;Fecha;Serial;Material;Kilos;Tipo;Detalle\n";
-      state.movimientos.forEach(m => {
-        csv += `${m.id};${m.fecha};${m.serialBulto};${m.nombreMaterial};${m.kilos};${m.tipo};\"${m.detalle}\"\n`;
+      let csv = "Serial;Material;Codigo;Lote;Fila;Posicion;Nivel;Kilos;Estado\n";
+      db.bultos.forEach(b => {
+        csv += `${b.serial};${b.nombreMaterial};${b.codigoMaterial};${b.lote};${b.filaBodega};${b.posicionFila};${b.nivelApilado};${b.kilos};${b.estado}\n`;
       });
-      descargarArchivo(csv, `Kardex_${state.versionApp}.csv`, "text/csv;charset=utf-8;");
+      descargarArchivo(csv, "Kardex_Bodega.csv", "text/csv");
     }
 
     function exportarJSON() {
-      guardarTodo();
-      descargarArchivo(JSON.stringify(state, null, 2), `Respaldo_${state.versionApp}.json`, "application/json");
-    }
-
-    function importarJSON(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          state = JSON.parse(evt.target.result);
-          guardarTodo();
-          cargarTodo();
-          alert("Respaldo restaurado.");
-        } catch (err) { alert("Archivo incompatible."); }
-      };
-      reader.readAsText(file);
+      descargarArchivo(JSON.stringify(db, null, 2), "Respaldo_Bodega.json", "application/json");
     }
 
     function descargarArchivo(contenido, nombre, tipo) {
-      const blob = new Blob([contenido], { type: tipo || "text/plain;charset=utf-8;" });
+      const blob = new Blob([contenido], { type: tipo });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = nombre;
       a.click();
     }
 
+    // Registro de Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
+      navigator.serviceWorker.register('./sw.js');
     }
 
     window.onload = cargarTodo;
