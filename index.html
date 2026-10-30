@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <link rel="manifest" href="./manifest.json">
-  <title>Bodega MP</title>
+  <title>Bodega MP / Colorantes</title>
 
-  <!-- Librerías para Código 128, Generación Directa de PDF, Escáner de Cámara y Excel (SheetJS) -->
+  <!-- Librerías para Código 128, Generación Directa de PDF, Escáner de Cámara y Excel -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -51,8 +51,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding-bottom: 75px; user-select: none; transition: background 0.2s, color 0.2s; }
 
-    header { background: #1c1c1e; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-    header h1 { font-size: 1.1rem; }
+    header { background: #1c1c1e; color: white; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 8px; }
+    header h1 { font-size: 1.05rem; }
 
     .view-section { display: none; padding: 12px; }
     .view-section.active { display: block; }
@@ -76,24 +76,18 @@
 
     .tab-badge { position: absolute; top: 1px; right: 20%; background: var(--purple); color: white; font-size: 0.6rem; font-weight: bold; padding: 1px 5px; border-radius: 10px; min-width: 14px; }
 
-    /* Mapa de Bodega */
-    .map-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
-    .fila-col { min-width: 125px; background: rgba(128,128,128,0.08); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
-    .fila-col.rack-col { min-width: 320px; background: rgba(0, 122, 255, 0.06); border: 1.5px solid rgba(0, 122, 255, 0.3); }
-    .fila-header { font-weight: bold; text-align: center; font-size: 0.85rem; padding: 6px; background: var(--btn-bordered-bg); color: var(--text); border-radius: 8px; }
+    /* Mapa y estructura visual compacta horizontal */
+    .map-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
+    .fila-col { min-width: 135px; background: rgba(128,128,128,0.08); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 8px; }
+    .fila-col.rack-col { min-width: 290px; background: rgba(0, 122, 255, 0.05); border: 1.5px solid rgba(0, 122, 255, 0.3); }
+    .fila-header { font-weight: bold; text-align: center; font-size: 0.82rem; padding: 6px; background: var(--btn-bordered-bg); color: var(--text); border-radius: 8px; }
     .pos-box { background: var(--card); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); }
-    .rack-level-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-    .rack-pos-cell { min-width: 140px; flex: 1; background: var(--subbox-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
     
-    /* Disposición HORIZONTAL en Piso N1 */
-    .rack-pos-cell-horizontal { min-width: 260px; }
-    .rack-pos-slots-horizontal { display: flex; flex-direction: row; gap: 6px; width: 100%; }
-    .rack-pos-slots-horizontal .pallet-slot { flex: 1; min-width: 120px; }
-
-    .pallet-slot { padding: 5px; border-radius: 5px; font-size: 0.72rem; text-align: left; cursor: pointer; color: var(--text); }
+    .rack-level-row { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+    .pallet-slot { min-width: 105px; flex: 1; padding: 6px; border-radius: 6px; font-size: 0.7rem; text-align: left; cursor: pointer; color: var(--text); background: var(--slot-bg); border: 1px solid var(--border); }
+    .pallet-slot.vacio { border: 1px dashed var(--border); background: transparent; color: var(--secondary-text); }
+    .pallet-slot.cargado { border: 1.5px solid var(--green); background: rgba(52, 199, 89, 0.12); }
     .pallet-slot.fifo-star { background: var(--orange) !important; color: white !important; font-weight: bold; }
-    .pallet-slot.empty { border: 0.8px dashed var(--border); color: var(--secondary-text); text-align: center; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
-    .pallet-slot.fixed-station { border: 1.5px solid var(--green); background: rgba(52, 199, 89, 0.1); }
 
     /* Modales */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px; }
@@ -104,17 +98,23 @@
 <body>
 
   <header>
-    <h1 id="header-title">Bodega MP</h1>
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <button id="btn-modo-noche" onclick="toggleModoNoche()" style="background: #2c2c2e; color: white; border: 1px solid #3a3a3c; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: bold;">🌙 Noche</button>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <h1 id="header-title">Bodega MP</h1>
+      <select id="selector-version-app" onchange="cambiarVersionApp(this.value)" style="width: auto; margin: 0; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; background: #2c2c2e; color: white; border: 1px solid #3a3a3c;">
+        <option value="V1">📦 Materia Prima (V1)</option>
+        <option value="V2">🎨 Colorantes (V2)</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button id="btn-modo-noche" onclick="toggleModoNoche()" style="background: #2c2c2e; color: white; border: 1px solid #3a3a3c; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">🌙 Noche</button>
       <span id="stock-kilos-badge" style="font-size: 0.8rem; background: #2c2c2e; padding: 4px 8px; border-radius: 6px;">0.0 kg</span>
     </div>
   </header>
 
-  <!-- 1. RECEPCIÓN CAMIÓN -->
+  <!-- 1. RECEPCIÓN CAMIÓN (ACTIVO EN V1 MATERIA PRIMA, OCULTO EN V2 COLORANTES) -->
   <section id="view-camion" class="view-section">
     <div class="card">
-      <h3 style="font-size: 1rem; margin-bottom: 8px;">Recepción Camión</h3>
+      <h3 style="font-size: 1rem; margin-bottom: 8px;">Recepción Camión (Materia Prima)</h3>
       <label style="font-size: 0.8rem; color: var(--secondary-text);">Plantilla de Catálogo</label>
       <select id="rec-material" onchange="actualizarPlantilla()"></select>
 
@@ -127,19 +127,8 @@
       <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote del Proveedor (Obligatorio)</label>
       <input type="text" id="rec-lote" placeholder="Lote..." oninput="validarFormularioCamion()">
 
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila / Rack Asignado para este Camión</label>
+      <label style="font-size: 0.8rem; color: var(--secondary-text);">Fila Asignada para este Camión</label>
       <select id="rec-fila"></select>
-
-      <div style="display: flex; gap: 8px;">
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Bolsas / Bultos x Pallet</label>
-          <input type="number" id="rec-bolsas-pallet" value="1" min="1" oninput="calcularPesoDesdeBolsasRec()">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 0.8rem; color: var(--secondary-text);">Peso x Bolsa (kg)</label>
-          <input type="number" id="rec-peso-bolsa" value="1200" oninput="calcularPesoDesdeBolsasRec()">
-        </div>
-      </div>
 
       <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
@@ -164,17 +153,13 @@
         Completa los Datos para Crear
       </button>
 
-      <!-- CARGA MASIVA DE RECEPCIÓN DESDE EXCEL -->
       <hr style="margin: 14px 0 10px 0; border: none; border-top: 1px solid var(--border);">
       <h4 style="font-size: 0.9rem; margin-bottom: 6px;">Recepción Masiva por Excel</h4>
       <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaRecepcionExcel()">📥 Plantilla Recepción Excel</button>
+        <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaRecepcionExcel()">📥 Plantilla Excel</button>
         <input type="file" id="file-import-recepcion-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarRecepcionExcel(event)">
-        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-recepcion-excel').click()">📤 Cargar Recepción Masiva</button>
+        <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-recepcion-excel').click()">📤 Cargar Excel Masivo</button>
       </div>
-      <small style="display: block; color: var(--secondary-text); font-size: 0.68rem;">
-        Columnas Excel: <b>Codigo | Nombre | Lote | Fila | BolsasPorPallet | PesoPorBolsa | PesoTotalPallet | CantidadPallets</b>
-      </small>
     </div>
   </section>
 
@@ -187,13 +172,13 @@
 
     <div id="banner-modo" class="card" style="background: rgba(52, 199, 89, 0.15); color: var(--green); border: none;">
       <strong id="banner-modo-titulo">MODO ENTRADA ACTIVO</strong>
-      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).</p>
+      <p id="banner-modo-sub" style="font-size: 0.75rem;">Ingresa formalmente pallets a stock sellando su fecha FIFO.</p>
     </div>
 
     <div id="contenedor-fifo-listas" style="display: none; margin-bottom: 12px;"></div>
 
     <button id="btn-scanner-principal" class="btn btn-blue" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="abrirCamara(null)">
-      Escanear Entrada a Bodega
+      Escanear Código con Cámara
     </button>
 
     <div style="display: flex; gap: 6px; margin-bottom: 12px;">
@@ -220,13 +205,16 @@
 
   <!-- 3. MAPA DE BODEGA -->
   <section id="view-mapa" class="view-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <div style="display: flex; gap: 8px; font-size: 0.7rem; flex-wrap: wrap;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+      <div id="leyenda-mapa" style="display: flex; gap: 8px; font-size: 0.7rem; flex-wrap: wrap;">
         <span><b style="color: var(--orange);">⭐ Prioritario</b></span>
-        <span><b style="color: var(--green);">■ N1 Piso (Horizontal: 2 Cód Fijos x Pos)</b></span>
-        <span><b style="color: var(--blue);">■ N2+ Reserva (Encargado)</b></span>
+        <span><b style="color: var(--green);">■ Con Stock</b></span>
+        <span><b style="color: var(--secondary-text);">□ Vacío</b></span>
       </div>
-      <button class="btn btn-blue" style="font-size: 0.75rem; padding: 6px 10px;" onclick="compactarPosiciones()">Compactar Pasillos</button>
+      <div style="display: flex; gap: 6px;">
+        <button id="btn-imprimir-racks" class="btn btn-bordered" style="font-size: 0.72rem; padding: 5px 8px; display: none;" onclick="imprimirCodigosRackFijosPDF()">🖨️ Etiquetas Racks</button>
+        <button class="btn btn-blue" style="font-size: 0.72rem; padding: 5px 8px;" onclick="compactarPosiciones()">Compactar</button>
+      </div>
     </div>
 
     <div class="map-container" id="mapa-filas-render"></div>
@@ -285,24 +273,24 @@
   <section id="view-respaldo" class="view-section">
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 0.9rem;">Gestión de Filas / Racks</h4>
+        <h4 style="font-size: 0.9rem;">Gestión de Filas / Pasillos</h4>
         <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="toggleModoEditarFilas()">Ordenar</button>
       </div>
       <div style="display: flex; gap: 4px; margin-top: 6px;">
-        <input type="text" id="nueva-fila-nombre" placeholder="Nombre (Ej: Rack 1 o Fila 9)..." style="margin: 0; flex: 1.5;">
+        <input type="text" id="nueva-fila-nombre" placeholder="Nombre (Ej: Rack A o Fila 9)..." style="margin: 0; flex: 1.5;">
         <select id="nueva-fila-tipo" style="margin: 0; flex: 1;" onchange="toggleOpcionesRackNuevaFila()">
-          <option value="Piso">Piso (Apilado)</option>
-          <option value="Rack">Rack (Niveles)</option>
+          <option value="Piso">Piso (Tradicional V1)</option>
+          <option value="Rack">Rack (Posición Única V2)</option>
         </select>
         <button class="btn btn-blue" onclick="agregarFila()">Añadir</button>
       </div>
       <div id="opciones-nueva-fila-rack" style="display: none; gap: 6px; margin-top: 6px; background: var(--subbox-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
         <div style="flex: 1;">
-          <label style="font-size: 0.72rem; color: var(--secondary-text);">Niveles de Altura (N1=Piso):</label>
+          <label style="font-size: 0.72rem; color: var(--secondary-text);">Niveles de Altura:</label>
           <input type="number" id="nueva-fila-niveles" value="3" min="1" max="10" style="margin: 2px 0 0 0; padding: 6px;">
         </div>
         <div style="flex: 1;">
-          <label style="font-size: 0.72rem; color: var(--secondary-text);">Pallets lado a lado x Nivel:</label>
+          <label style="font-size: 0.72rem; color: var(--secondary-text);">Posiciones Lado a Lado:</label>
           <input type="number" id="nueva-fila-posiciones" value="4" min="1" max="30" style="margin: 2px 0 0 0; padding: 6px;">
         </div>
       </div>
@@ -321,195 +309,100 @@
     <div class="card">
       <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Catálogo de Materiales</h4>
       <button class="btn btn-blue" style="width: 100%; margin-bottom: 8px;" onclick="abrirModalMaterial(null)">Nuevo Artículo al Catálogo</button>
-      
-      <!-- CARGA MASIVA DESDE EXCEL -->
       <div style="display: flex; gap: 6px; margin-bottom: 6px;">
         <button class="btn btn-bordered" style="flex: 1; font-size: 0.75rem;" onclick="descargarPlantillaCatalogoExcel()">📥 Plantilla Excel</button>
         <input type="file" id="file-import-catalogo-excel" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importarCatalogoExcel(event)">
         <button class="btn btn-green" style="flex: 1.3; font-size: 0.75rem;" onclick="document.getElementById('file-import-catalogo-excel').click()">📤 Cargar Excel Masivo</button>
       </div>
-      <small style="display: block; color: var(--secondary-text); font-size: 0.68rem; margin-bottom: 8px;">
-        Columnas Excel: <b>Codigo | Nombre | BolsasPorPallet | PesoPorBolsa | PesoTotal | TipoEmpaque | FIFO</b>
-      </small>
-
       <div id="lista-catalogo-gestion"></div>
     </div>
   </section>
 
-  <!-- MODAL ETIQUETAS BROTHER 62MM CON DESCARGA DIRECTA EN PDF -->
+  <!-- MODAL GESTIONAR POSICIÓN RACK (V2 COLORANTES: CARGAR O RETIRAR BOLSAS) -->
+  <div id="modal-operar-posicion-rack" class="modal">
+    <div class="modal-content">
+      <h3 id="op-rack-titulo" style="color: var(--blue);">Posición Rack</h3>
+      <p id="op-rack-subtitulo" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
+      <input type="hidden" id="op-rack-codigo-pos">
+
+      <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+        <button id="btn-tab-op-cargar" class="btn btn-green" style="flex: 1;" onclick="setModoOperarRack('CARGAR')">➕ Cargar / Reponer</button>
+        <button id="btn-tab-op-retirar" class="btn btn-bordered" style="flex: 1;" onclick="setModoOperarRack('RETIRAR')">📤 Retirar Bolsas</button>
+      </div>
+
+      <!-- FORMULARIO DE CARGA DIRECTA EN LA POSICIÓN -->
+      <div id="form-rack-cargar">
+        <label style="font-size: 0.8rem; color: var(--secondary-text);">Material a Asignar/Cargar:</label>
+        <select id="op-rack-material-select" onchange="actualizarValoresBolsaRack()"></select>
+
+        <label style="font-size: 0.8rem; color: var(--secondary-text);">Lote:</label>
+        <input type="text" id="op-rack-lote" placeholder="Lote del producto...">
+
+        <div style="display: flex; gap: 8px;">
+          <div style="flex: 1;">
+            <label style="font-size: 0.75rem; color: var(--secondary-text);">Bolsas a Cargar:</label>
+            <input type="number" id="op-rack-cant-bolsas" value="25" min="1" oninput="recalcularKilosCargaRack()">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
+            <input type="number" id="op-rack-peso-bolsa" value="15" oninput="recalcularKilosCargaRack()">
+          </div>
+        </div>
+
+        <p id="op-rack-total-kilos-txt" style="font-size: 0.82rem; font-weight: bold; color: var(--green); margin-bottom: 8px;">Total a sumar: 375.0 kg</p>
+        <button class="btn btn-green" style="width: 100%;" onclick="confirmarCargaBolsasRack()">Guardar Carga en Posición</button>
+      </div>
+
+      <!-- FORMULARIO DE RETIRO DE BOLSAS PARA PRODUCCIÓN -->
+      <div id="form-rack-retirar" style="display: none;">
+        <label style="font-size: 0.75rem; color: var(--secondary-text);">Bolsas a Retirar para Planta:</label>
+        <input type="number" id="op-rack-retirar-bolsas" value="1" min="1" oninput="recalcularKilosRetiroRack()">
+        
+        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(1)">1 Bls</button>
+          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(2)">2 Bls</button>
+          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(3)">3 Bls</button>
+          <button class="btn btn-bordered" style="flex: 1; padding: 4px;" onclick="setBolsasRetiroDirecto(4)">4 Bls</button>
+        </div>
+
+        <p id="op-rack-retiro-kilos-txt" style="font-size: 0.82rem; font-weight: bold; color: var(--orange); margin-bottom: 8px;"></p>
+        <button class="btn btn-orange" style="width: 100%;" onclick="confirmarRetiroBolsasRack()">Retirar a Producción</button>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-operar-posicion-rack')">Cerrar</button>
+        <button class="btn btn-blue" style="flex: 1;" onclick="imprimirEtiquetaPosicionRack()">🖨️ Etiqueta Posición</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE PALLET V1 -->
+  <div id="modal-pallet-mapa" class="modal">
+    <div class="modal-content">
+      <div id="render-etiqueta-detalle"></div>
+      <div id="render-datos-detalle" style="margin: 10px 0; font-size: 0.85rem;"></div>
+      <button class="btn btn-bordered" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL ETIQUETAS BROTHER -->
   <div id="modal-etiquetas" class="modal">
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3>Etiquetas Generadas</h3>
         <button class="btn btn-bordered" onclick="cerrarModal('modal-etiquetas')">Listo</button>
       </div>
-      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="descargarLotePDF()">
-        Descargar PDF Etiquetas (62mm)
-      </button>
+      <button class="btn btn-blue" style="width: 100%; margin: 10px 0;" onclick="descargarLotePDF()">Descargar PDF Etiquetas (62mm)</button>
       <div id="contenedor-etiquetas-brother"></div>
     </div>
   </div>
 
-  <!-- MODAL ASIGNAR CÓDIGO ÚNICO FIJO EN NIVEL 1 -->
-  <div id="modal-crear-slot-fijo" class="modal">
-    <div class="modal-content">
-      <h3 style="color: var(--green);">Asignar Código Fijo de Piso (Nivel 1)</h3>
-      <p id="slot-fijo-ubicacion-txt" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <input type="hidden" id="slot-fijo-fila">
-      <input type="hidden" id="slot-fijo-pos">
-      <input type="hidden" id="slot-fijo-subslot">
-
-      <label style="font-size: 0.8rem; font-weight: bold;">Código Único Fijo Permanente:</label>
-      <input type="text" id="slot-fijo-codigo-custom" placeholder="Ej: PK-R1-P1A o CÓDIGO PROPIO...">
-
-      <label style="font-size: 0.8rem; color: var(--secondary-text);">Material que albergará este puesto (Opcional):</label>
-      <select id="slot-fijo-material-select"></select>
-
-      <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-crear-slot-fijo')">Cancelar</button>
-        <button class="btn btn-green" style="flex: 1;" onclick="guardarCodigoFijoSlot()">Asignar y Crear</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL RETIRO / CONSUMO DE BOLSAS EN NIVEL 1 DE RACK (OPERADORES Y ENCARGADO) -->
-  <div id="modal-consumo-bolsas-n1" class="modal">
-    <div class="modal-content">
-      <h3 style="color: var(--green);">📤 Retiro de Bolsas (Nivel 1 Picking)</h3>
-      <p id="consumo-n1-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <input type="hidden" id="consumo-n1-serial">
-
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <div style="flex: 1;">
-          <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
-          <input type="number" id="consumo-n1-peso-bolsa" value="25" oninput="recalcularConsumoBolsasN1()" style="padding: 8px;">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 0.75rem; color: var(--secondary-text);">Cant. Bolsas a Sacar:</label>
-          <input type="number" id="consumo-n1-cant-bolsas" value="1" min="1" oninput="recalcularConsumoBolsasN1()" style="padding: 8px;">
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(1)">1 Bolsa</button>
-        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(2)">2 Bolsas</button>
-        <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(3)">3 Bolsas</button>
-        <button type="button" class="btn btn-blue" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasConsumoN1(4)">4 Bolsas</button>
-      </div>
-
-      <p id="consumo-n1-resumen" style="font-size: 0.8rem; font-weight: bold; color: var(--green); margin-bottom: 8px;"></p>
-
-      <label style="font-size: 0.78rem; font-weight: bold;">Motivo / Destino:</label>
-      <input type="text" id="consumo-n1-motivo" value="Consumo turno producción">
-
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-consumo-bolsas-n1')">Cancelar</button>
-        <button class="btn btn-green" style="flex: 1;" onclick="confirmarConsumoBolsasN1()">Confirmar Retiro</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL UBICACIÓN Y ABASTECIMIENTO PORCIONADO EN RACK -->
-  <div id="modal-ubicacion-rack" class="modal">
-    <div class="modal-content">
-      <h3 id="titulo-modal-rack" style="color: var(--blue);">Elegir Ubicación en Rack</h3>
-      <p id="subtitulo-modal-rack" style="font-size: 0.82rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <input type="hidden" id="rack-sel-serial">
-      <input type="hidden" id="rack-sel-modo">
-
-      <!-- BLOQUE EXCLUSIVO PARA ABASTECIMIENTO PORCIONADO DESDE NIVEL 2+ A NIVEL 1 -->
-      <div id="bloque-abastecer-porcionado" style="display: none; background: var(--subbox-bg); padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
-        <label style="font-size: 0.8rem; font-weight: bold; color: var(--blue);">Modalidad de Bajada a Nivel 1:</label>
-        <select id="abast-modalidad" onchange="toggleModalidadAbastecimiento()" style="margin-bottom: 8px;">
-          <option value="PORCIONADO">Porcionar por Bolsas (Bajar bolsas)</option>
-          <option value="COMPLETO">Bajar el Pallet Completo</option>
-        </select>
-
-        <div id="subbloque-porcionado-bolsas">
-          <div style="display: flex; gap: 8px;">
-            <div style="flex: 1;">
-              <label style="font-size: 0.75rem; color: var(--secondary-text);">Peso x Bolsa (kg):</label>
-              <input type="number" id="abast-peso-bolsa" value="25" oninput="recalcularPorcionadoBolsas()" style="margin-bottom: 6px; padding: 8px;">
-            </div>
-            <div style="flex: 1;">
-              <label style="font-size: 0.75rem; color: var(--secondary-text);">Cant. Bolsas a Bajar:</label>
-              <input type="number" id="abast-cant-bolsas" value="4" min="1" oninput="recalcularPorcionadoBolsas()" style="margin-bottom: 6px; padding: 8px;">
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(1)">1 Bolsa</button>
-            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(2)">2 Bolsas</button>
-            <button type="button" class="btn btn-bordered" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(3)">3 Bolsas</button>
-            <button type="button" class="btn btn-blue" style="flex: 1; padding: 6px 4px; font-size: 0.75rem;" onclick="setBolsasAbastecer(4)">4 Bolsas</button>
-          </div>
-
-          <p id="resumen-porcionado-kilos" style="font-size: 0.8rem; font-weight: bold; color: var(--green); margin-bottom: 8px;"></p>
-
-          <label style="font-size: 0.78rem; font-weight: bold;">Código Destino en el Nivel 1:</label>
-          <select id="abast-destino-codigo" style="margin-bottom: 4px;"></select>
-        </div>
-      </div>
-
-      <label style="font-size: 0.8rem; font-weight: bold;">Fila / Rack:</label>
-      <select id="rack-sel-fila" onchange="actualizarOpcionesNivelPosRack()"></select>
-
-      <label style="font-size: 0.8rem; font-weight: bold;">Nivel de Altura (Nivel 1 = Picking Piso, Nivel 2+ = Reserva Encargado):</label>
-      <select id="rack-sel-nivel" onchange="actualizarPosicionesDisponiblesRack()"></select>
-
-      <label style="font-size: 0.8rem; font-weight: bold;">Posición en el Nivel (Lado a Lado):</label>
-      <select id="rack-sel-posicion" onchange="actualizarOpcionesDestinoPorcionado()"></select>
-
-      <div id="info-slot-nivel1" style="background: rgba(52, 199, 89, 0.12); color: var(--green); padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 10px; display: none;">
-        ℹ️ <b>Nivel 1 (A Piso):</b> Estructura horizontal con <b>2 códigos fijos por posición</b> (lado a lado) para flujo continuo de recepción y picking.
-      </div>
-
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-ubicacion-rack')">Cancelar</button>
-        <button class="btn btn-blue" style="flex: 1;" onclick="confirmarUbicacionRack()">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DETALLE PALLET MAPA -->
-  <div id="modal-pallet-mapa" class="modal">
-    <div class="modal-content">
-      <div id="render-etiqueta-detalle"></div>
-      <div id="render-datos-detalle" style="margin: 10px 0; font-size: 0.85rem;"></div>
-      <div id="render-acciones-rack-detalle" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
-      <button class="btn btn-bordered" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa')">Cerrar</button>
-    </div>
-  </div>
-
-  <!-- MODAL AJUSTE DE KILOS -->
-  <div id="modal-ajuste-kilos" class="modal">
-    <div class="modal-content">
-      <h3>Modificar Kilos</h3>
-      <p id="ajuste-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <label style="font-size: 0.8rem;">Saldo Real (kg):</label>
-      <input type="number" id="ajuste-nuevos-kilos">
-      <label style="font-size: 0.8rem;">Observación:</label>
-      <input type="text" id="ajuste-motivo" value="Consumo en producción">
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-ajuste-kilos')">Cancelar</button>
-        <button class="btn btn-purple" style="flex: 1;" onclick="confirmarAjusteKilos()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL NO CONFORME (DESECHO) -->
-  <div id="modal-no-conforme" class="modal">
-    <div class="modal-content">
-      <h3 style="color: var(--red);">Registrar No Conforme (Desecho)</h3>
-      <p id="nc-pallet-info" style="font-size: 0.85rem; color: var(--secondary-text); margin: 6px 0;"></p>
-      <label style="font-size: 0.8rem;">Kilos a Descontar por Desecho (kg):</label>
-      <input type="number" id="nc-kilos-descontar" placeholder="Ej: 100">
-      <label style="font-size: 0.8rem;">Motivo / Causa:</label>
-      <input type="text" id="nc-motivo" value="Contaminación / Desecho en producción">
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-bordered" style="flex: 1;" onclick="cerrarModal('modal-no-conforme')">Cancelar</button>
-        <button class="btn btn-red" style="flex: 1;" onclick="confirmarNoConforme()">Descontar</button>
-      </div>
+  <!-- MODAL SCANNER -->
+  <div id="modal-scanner" class="modal">
+    <div class="modal-content" style="max-width: 340px; text-align: center;">
+      <div id="reader"></div>
+      <p id="scanner-objetivo-msg" style="font-size: 0.8rem; margin-top: 8px; font-weight: bold; color: var(--orange);"></p>
+      <button class="btn btn-red" style="width: 100%; margin-top: 10px;" onclick="cerrarScanner()">Cerrar</button>
     </div>
   </div>
 
@@ -543,8 +436,6 @@
         <option value="Bolsas en Pallet">Bolsas en Pallet</option>
         <option value="Bolsa">Bolsa</option>
         <option value="Caja">Caja</option>
-        <option value="Tambor">Tambor</option>
-        <option value="Contenedor">Contenedor</option>
       </select>
       <label style="font-size: 0.8rem;">Control FIFO:</label>
       <select id="editor-mat-fifo">
@@ -559,53 +450,46 @@
     </div>
   </div>
 
-  <!-- MODAL SCANNER AVFOUNDATION / HTML5 -->
-  <div id="modal-scanner" class="modal">
-    <div class="modal-content" style="max-width: 340px; text-align: center;">
-      <div id="reader"></div>
-      <p id="scanner-objetivo-msg" style="font-size: 0.8rem; margin-top: 8px; font-weight: bold; color: var(--orange);"></p>
-      <button class="btn btn-red" style="width: 100%; margin-top: 10px;" onclick="cerrarScanner()">Cerrar</button>
-    </div>
-  </div>
-
   <!-- BARRA DE NAVEGACIÓN -->
   <nav class="tabbar">
-    <div class="tab-item" onclick="cambiarTab('view-camion', this)">
+    <div id="tab-nav-camion" class="tab-item" onclick="cambiarTab('view-camion', this)">
       <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       Recepción
     </div>
-    <div class="tab-item active" onclick="cambiarTab('view-bodega', this)">
+    <div id="tab-nav-bodega" class="tab-item active" onclick="cambiarTab('view-bodega', this)">
       <svg viewBox="0 0 24 24"><path d="M4 10h16v10H4zM2 4h20v4H2z"/></svg>
       Bodega
     </div>
-    <div class="tab-item" onclick="cambiarTab('view-mapa', this)">
+    <div id="tab-nav-mapa" class="tab-item" onclick="cambiarTab('view-mapa', this)">
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/></svg>
       Mapa
     </div>
-    <div class="tab-item" onclick="cambiarTab('view-produccion', this)">
+    <div id="tab-nav-produccion" class="tab-item" onclick="cambiarTab('view-produccion', this)">
       <span class="tab-badge" id="badge-planta" style="display: none;">0</span>
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
       Planta
     </div>
-    <div class="tab-item" onclick="cambiarTab('view-inventario', this)">
+    <div id="tab-nav-inventario" class="tab-item" onclick="cambiarTab('view-inventario', this)">
       <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
       Inventario
     </div>
-    <div class="tab-item" onclick="cambiarTab('view-auditoria', this)">
+    <div id="tab-nav-auditoria" class="tab-item" onclick="cambiarTab('view-auditoria', this)">
       <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
       Auditoría
     </div>
-    <div class="tab-item" onclick="cambiarTab('view-respaldo', this)">
+    <div id="tab-nav-respaldo" class="tab-item" onclick="cambiarTab('view-respaldo', this)">
       <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
       Respaldo
     </div>
   </nav>
 
   <script>
-    const STORAGE_KEY = "FLUJOS_SISTEMA_BODEGA_DATA";
+    const STORAGE_KEY_V1 = "FLUJOS_SISTEMA_BODEGA_DATA";
+    const STORAGE_KEY_V2 = "FLUJOS_SISTEMA_COLORANTES_DATA";
     const nombreFilaRetornados = "Retornados";
 
     let state = {
+      versionApp: "V1", // "V1" = Materia Prima, "V2" = Colorantes
       contador: 100,
       modoNoche: false,
       modoOperacion: "ENTRADA BODEGA",
@@ -627,30 +511,62 @@
     let scannerActivo = null;
     let ultimoLoteGenerado = [];
 
-    // --- MODO NOCHE (OSCURO) ---
+    function getStorageKey() {
+      return (state.versionApp === "V2") ? STORAGE_KEY_V2 : STORAGE_KEY_V1;
+    }
+
+    // --- CAMBIAR VERSIÓN (V1 MATERIA PRIMA vs V2 COLORANTES) ---
+    function cambiarVersionApp(version) {
+      guardarTodo(); // guardar estado actual
+      state.versionApp = version;
+      localStorage.setItem("BODEGA_VERSION_SELECCIONADA", version);
+      cargarTodo();
+    }
+
+    function aplicarConfiguracionVersion() {
+      const esV2 = (state.versionApp === "V2");
+      document.getElementById('header-title').innerText = esV2 ? "Bodega Colorantes" : "Bodega Materia Prima";
+      document.getElementById('selector-version-app').value = state.versionApp;
+      
+      // En Colorantes (V2), la recepción tradicional de camión no opera; se opera todo desde el mapa
+      const tabCamion = document.getElementById('tab-nav-camion');
+      const btnImprimirRacks = document.getElementById('btn-imprimir-racks');
+
+      if (esV2) {
+        tabCamion.style.display = 'none';
+        btnImprimirRacks.style.display = 'inline-flex';
+        if (document.getElementById('view-camion').classList.contains('active')) {
+          cambiarTab('view-mapa', document.getElementById('tab-nav-mapa'));
+        }
+      } else {
+        tabCamion.style.display = 'flex';
+        btnImprimirRacks.style.display = 'none';
+      }
+    }
+
+    // --- MODO NOCHE ---
     function aplicarModoNoche() {
       const activo = !!state.modoNoche;
       document.body.classList.toggle('dark-mode', activo);
       const btn = document.getElementById('btn-modo-noche');
-      if (btn) {
-        btn.innerText = activo ? '☀️ Día' : '🌙 Noche';
-      }
+      if (btn) btn.innerText = activo ? '☀️ Día' : '🌙 Noche';
     }
 
     function toggleModoNoche() {
       state.modoNoche = !state.modoNoche;
       aplicarModoNoche();
       guardarTodo();
-      if (document.getElementById('view-bodega').classList.contains('active')) renderizarBodega();
-      if (document.getElementById('view-mapa').classList.contains('active')) renderizarMapa();
-      if (document.getElementById('view-respaldo').classList.contains('active')) renderizarGestionFilas();
     }
 
-    // --- HELPERS DE VERSATILIDAD (RACK / PISO Y FIFO) ---
     function getConfigFila(nombreFila) {
       if (!state.configFilas) state.configFilas = {};
       if (!state.configFilas[nombreFila]) {
-        state.configFilas[nombreFila] = { tipo: "Piso", niveles: 2, posicionesPorNivel: 4 };
+        const esV2 = (state.versionApp === "V2");
+        state.configFilas[nombreFila] = {
+          tipo: esV2 ? "Rack" : "Piso",
+          niveles: esV2 ? 3 : 2,
+          posicionesPorNivel: 4
+        };
       }
       return state.configFilas[nombreFila];
     }
@@ -665,21 +581,21 @@
       return state.catalogo.find(c => c.nombre === nombreMaterial) || null;
     }
 
-    // --- PERSISTENCIA ATÓMICA ---
     function guardarTodo() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(getStorageKey(), JSON.stringify(state));
       actualizarEstadisticas();
     }
 
     function cargarTodo() {
-      const guardado = localStorage.getItem(STORAGE_KEY);
+      const versionGuardada = localStorage.getItem("BODEGA_VERSION_SELECCIONADA") || state.versionApp || "V1";
+      state.versionApp = versionGuardada;
+
+      const guardado = localStorage.getItem(getStorageKey());
       if (guardado) {
-        try { 
-          state = JSON.parse(guardado);
-        } catch (e) { 
-          console.error("Error al cargar localStorage", e); 
-        }
+        try { state = JSON.parse(guardado); } catch (e) { console.error(e); }
       }
+      state.versionApp = versionGuardada;
+
       if (!state.filasBodega || state.filasBodega.length === 0) {
         state.filasBodega = ["Fila 1", "Fila 2", "Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8"];
       }
@@ -691,14 +607,8 @@
           if (!c.pesoBolsaDefault) c.pesoBolsaDefault = (c.pesoDefault / c.bolsasPorPallet) || 25;
         });
       }
-      if (state.bultos) {
-        state.bultos.forEach(b => {
-          if (!b.pesoBolsa) {
-            const m = obtenerMaterialPorNombre(b.nombreMaterial);
-            b.pesoBolsa = m ? m.pesoBolsaDefault : 25;
-          }
-        });
-      }
+
+      aplicarConfiguracionVersion();
       aplicarModoNoche();
       poblarSelectores();
       renderizarBodega();
@@ -706,7 +616,7 @@
     }
 
     function purgarBaseDeDatos() {
-      if (!confirm("⚠️ ¿Estás seguro de restablecer toda la base de datos?\nSe borrarán todos los pallets creados y movimientos, dejándola completamente limpia.")) return;
+      if (!confirm(`⚠️ ¿Restablecer toda la base de datos de ${state.versionApp === 'V2' ? 'Colorantes (V2)' : 'Materia Prima (V1)'}?`)) return;
       state.bultos = [];
       state.movimientos = [];
       state.contador = 100;
@@ -716,14 +626,14 @@
       renderizarProduccion();
       renderizarInventario();
       renderizarAuditoria();
-      alert("Base de datos restablecida. Ya no hay pallets registrados.");
+      alert("Base de datos restablecida.");
     }
 
     function cambiarTab(tabId, el) {
       document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
-      el.classList.add('active');
+      if (el) el.classList.add('active');
 
       if (tabId === 'view-bodega') renderizarBodega();
       if (tabId === 'view-mapa') renderizarMapa();
@@ -753,7 +663,7 @@
       document.getElementById('planta-kilos-count').innerText = `${enPlanta.reduce((a, b) => a + b.kilos, 0).toFixed(1)} kg`;
     }
 
-    // --- REGLA FIFO Y EXTRACCIÓN ---
+    // --- FIFO ---
     function compararFIFO(a, b) {
       const fa = new Date(a.fechaIngresoBodega || a.fechaCreacion);
       const fb = new Date(b.fechaIngresoBodega || b.fechaCreacion);
@@ -763,8 +673,8 @@
 
     function esExtraiblePorOperador(pallet) {
       const cfg = getConfigFila(pallet.filaBodega);
-      if (cfg.tipo === "Rack") {
-        return pallet.nivelApilado === 1;
+      if (cfg.tipo === "Rack" && state.versionApp === "V2") {
+        return true; // En Colorantes V2 se retira de la posición asignada
       }
       return true;
     }
@@ -779,20 +689,13 @@
 
       return Object.keys(agrupados).map(nombreMat => {
         const ordenados = agrupados[nombreMat].sort(compararFIFO);
-        const extraibles = ordenados.filter(esExtraiblePorOperador);
-        const enReservaAltura = ordenados.filter(b => !esExtraiblePorOperador(b));
-        const colaOperativa = [...extraibles, ...enReservaAltura];
         const activoFIFO = materialUsaFIFO(nombreMat);
-        const prioritario = activoFIFO ? (extraibles.length > 0 ? extraibles[0] : ordenados[0]) : null;
-
         return {
           nombreMaterial: nombreMat,
           codigoMaterial: ordenados[0].codigoMaterial,
           usaFIFO: activoFIFO,
-          palletsEnStock: colaOperativa,
-          palletsPickingN1: extraibles,
-          palletsReservaAltura: enReservaAltura,
-          palletPrioritario: prioritario,
+          palletsEnStock: ordenados,
+          palletPrioritario: activoFIFO ? ordenados[0] : null,
           totalKilos: ordenados.reduce((a, b) => a + b.kilos, 0)
         };
       }).sort((a, b) => a.nombreMaterial.localeCompare(b.nombreMaterial));
@@ -803,18 +706,15 @@
       return listas.some(g => g.usaFIFO && g.palletPrioritario && g.palletPrioritario.serial === serial);
     }
 
-    // --- RECEPCIÓN CAMIÓN ---
+    // --- RECEPCIÓN CAMIÓN (V1) ---
     function poblarSelectores() {
       const selMat = document.getElementById('rec-material');
-      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.bolsasPorPallet || 1} bls x ${c.pesoBolsaDefault || c.pesoDefault}kg = ${c.pesoDefault}kg) ${c.usaFIFO === false ? '[Sin FIFO]' : ''}</option>`).join('');
+      selMat.innerHTML = state.catalogo.map((c, i) => `<option value="${i}">${c.nombre} (${c.pesoDefault} kg)</option>`).join('');
       actualizarPlantilla();
 
       const selFila = document.getElementById('rec-fila');
       const disponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
-      selFila.innerHTML = disponibles.map(f => {
-        const cfg = getConfigFila(f);
-        return `<option value="${f}">${f} (${cfg.tipo === 'Rack' ? 'Rack' : 'Piso'})</option>`;
-      }).join('');
+      selFila.innerHTML = disponibles.map(f => `<option value="${f}">${f}</option>`).join('');
     }
 
     function actualizarPlantilla() {
@@ -823,18 +723,7 @@
       if (!mat) return;
       document.getElementById('rec-codigo').value = mat.codigo;
       document.getElementById('rec-nombre').value = mat.nombre;
-      document.getElementById('rec-bolsas-pallet').value = mat.bolsasPorPallet || 1;
-      document.getElementById('rec-peso-bolsa').value = mat.pesoBolsaDefault || mat.pesoDefault;
       document.getElementById('rec-peso').value = mat.pesoDefault;
-      validarFormularioCamion();
-    }
-
-    function calcularPesoDesdeBolsasRec() {
-      const bls = parseFloat(document.getElementById('rec-bolsas-pallet').value) || 0;
-      const pBolsa = parseFloat(document.getElementById('rec-peso-bolsa').value) || 0;
-      if (bls > 0 && pBolsa > 0) {
-        document.getElementById('rec-peso').value = (bls * pBolsa).toFixed(1);
-      }
       validarFormularioCamion();
     }
 
@@ -869,8 +758,6 @@
       const fila = document.getElementById('rec-fila').value;
       const peso = parseFloat(document.getElementById('rec-peso').value);
       const cantidad = parseInt(document.getElementById('rec-cantidad').value);
-      const bolsasPallet = parseInt(document.getElementById('rec-bolsas-pallet').value) || (mat.bolsasPorPallet || 1);
-      const pesoBolsa = parseFloat(document.getElementById('rec-peso-bolsa').value) || (mat.pesoBolsaDefault || 25);
 
       const nuevos = [];
       for (let i = 0; i < cantidad; i++) {
@@ -883,14 +770,10 @@
           nombreMaterial: nombre || mat.nombre,
           kilos: peso,
           kilosIniciales: peso,
-          bolsasPorPallet: bolsasPallet,
-          pesoBolsa: pesoBolsa,
-          tipoEmpaque: `${bolsasPallet} bls x ${pesoBolsa}kg`,
           lote: lote,
           filaBodega: fila,
           posicionFila: 1,
           nivelApilado: 1,
-          subSlot: 1,
           fechaCreacion: new Date().toISOString(),
           fechaIngresoBodega: null,
           estado: "Creado",
@@ -906,932 +789,7 @@
       validarFormularioCamion();
     }
 
-    // --- CARGA MASIVA DE RECEPCIÓN DESDE EXCEL (.XLSX / .XLS / .CSV) ---
-    function descargarPlantillaRecepcionExcel() {
-      if (typeof XLSX === 'undefined') {
-        alert("La librería de Excel aún se está cargando. Revisa tu conexión e inténtalo de nuevo.");
-        return;
-      }
-      const filaEjemplo = (state.filasBodega && state.filasBodega[0]) ? state.filasBodega[0] : "Fila 1";
-      const datosEjemplo = [
-        {
-          Codigo: "RMGE00007",
-          Nombre: "Material - PA6 - Genérico - AZOTY",
-          Lote: "LOTE-A100",
-          Fila: filaEjemplo,
-          BolsasPorPallet: 1,
-          PesoPorBolsa: 1200,
-          PesoTotalPallet: 1200,
-          CantidadPallets: 10
-        },
-        {
-          Codigo: "RMGE00012",
-          Nombre: "Material - PA6 - 1030MB",
-          Lote: "LOTE-B200",
-          Fila: filaEjemplo,
-          BolsasPorPallet: 30,
-          PesoPorBolsa: 25,
-          PesoTotalPallet: 750,
-          CantidadPallets: 5
-        }
-      ];
-
-      const ws = XLSX.utils.json_to_sheet(datosEjemplo);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Recepcion");
-      XLSX.writeFile(wb, "Plantilla_Recepcion_Masiva.xlsx");
-    }
-
-    function importarRecepcionExcel(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const filas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-          if (!filas || filas.length === 0) {
-            alert("El archivo Excel está vacío o no tiene filas válidas.");
-            event.target.value = "";
-            return;
-          }
-
-          const nuevosTotales = [];
-          let lotesProcesados = 0;
-          const filaPorDefecto = document.getElementById('rec-fila').value || state.filasBodega[0] || "Fila 1";
-
-          filas.forEach(row => {
-            const norm = {};
-            Object.keys(row).forEach(k => {
-              const cleanKey = k.trim().toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9]/g, "");
-              norm[cleanKey] = row[k];
-            });
-
-            let codigo = String(norm.codigo || norm.cod || norm.codigomaterial || "").trim().toUpperCase();
-            let nombre = String(norm.nombre || norm.descripcion || norm.material || norm.nombrematerial || "").trim();
-            const lote = String(norm.lote || norm.loteproveedor || norm.nro_lote || "").trim().toUpperCase();
-
-            const matCat = state.catalogo.find(c =>
-              (codigo && c.codigo.toUpperCase() === codigo) ||
-              (nombre && c.nombre.toLowerCase() === nombre.toLowerCase())
-            );
-
-            if (!codigo && matCat) codigo = matCat.codigo;
-            if (!nombre && matCat) nombre = matCat.nombre;
-
-            if (!codigo || !nombre || !lote) return;
-
-            let filaAsignada = String(norm.fila || norm.rack || norm.filabodega || norm.ubicacion || filaPorDefecto).trim();
-            if (!filaAsignada) filaAsignada = filaPorDefecto;
-
-            if (filaAsignada.toLowerCase() !== nombreFilaRetornados.toLowerCase() && !state.filasBodega.includes(filaAsignada)) {
-              state.filasBodega.push(filaAsignada);
-              getConfigFila(filaAsignada);
-            }
-
-            const bolsasPallet = Math.max(1, parseInt(norm.bolsasporpallet || norm.bolsas || norm.bultos || (matCat ? matCat.bolsasPorPallet : 1)) || 1);
-            const pesoBolsa = parseFloat(norm.pesoporbolsa || norm.pesobolsa || (matCat ? matCat.pesoBolsaDefault : 0)) || 0;
-            let pesoTotal = parseFloat(norm.pesototalpallet || norm.pesototal || norm.pesopallet || norm.peso || norm.kilos || 0) || 0;
-
-            if (pesoTotal <= 0 && pesoBolsa > 0) {
-              pesoTotal = bolsasPallet * pesoBolsa;
-            } else if (pesoTotal <= 0 && matCat) {
-              pesoTotal = matCat.pesoDefault;
-            }
-
-            const pesoBolsaFinal = pesoBolsa > 0 ? pesoBolsa : (pesoTotal > 0 ? (pesoTotal / bolsasPallet) : 25);
-            const pesoTotalFinal = pesoTotal > 0 ? pesoTotal : (bolsasPallet * pesoBolsaFinal);
-            const cantidadPallets = Math.max(1, parseInt(norm.cantidadpallets || norm.cantidad || norm.pallets || norm.cant || 1) || 1);
-
-            for (let i = 0; i < cantidadPallets; i++) {
-              state.contador++;
-              const serial = `BTO-${String(state.contador).padStart(5, '0')}`;
-              const bulto = {
-                id: crypto.randomUUID(),
-                serial: serial,
-                codigoMaterial: codigo,
-                nombreMaterial: nombre,
-                kilos: pesoTotalFinal,
-                kilosIniciales: pesoTotalFinal,
-                bolsasPorPallet: bolsasPallet,
-                pesoBolsa: pesoBolsaFinal,
-                tipoEmpaque: `${bolsasPallet} bls x ${pesoBolsaFinal}kg`,
-                lote: lote,
-                filaBodega: filaAsignada,
-                posicionFila: 1,
-                nivelApilado: 1,
-                subSlot: 1,
-                fechaCreacion: new Date().toISOString(),
-                fechaIngresoBodega: null,
-                estado: "Creado",
-                ajustadoEnTurno: false
-              };
-              state.bultos.push(bulto);
-              nuevosTotales.push(bulto);
-            }
-            lotesProcesados++;
-          });
-
-          if (nuevosTotales.length === 0) {
-            alert("No se encontraron filas válidas. Asegúrate de completar al menos Codigo (o Nombre), Lote y CantidadPallets.");
-            event.target.value = "";
-            return;
-          }
-
-          guardarTodo();
-          poblarSelectores();
-          ultimoLoteGenerado = nuevosTotales;
-          renderizarEtiquetasBrother(nuevosTotales);
-          alert(`✅ Recepción masiva completada:\n• Filas/Lotes procesados: ${lotesProcesados}\n• Total etiquetas/pallets generados: ${nuevosTotales.length}`);
-        } catch (err) {
-          console.error(err);
-          alert("Error al procesar el archivo Excel de recepción.");
-        }
-        event.target.value = "";
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function renderizarEtiquetasBrother(pallets) {
-      const cont = document.getElementById('contenedor-etiquetas-brother');
-      cont.innerHTML = pallets.map(b => `
-        <div class="etiqueta-brother">
-          <h4 style="font-size: 0.95rem; margin-bottom: 4px;">${b.nombreMaterial}</h4>
-          <p style="font-size: 0.7rem; font-weight: bold; color: #555;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
-          <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
-          <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: 2px;">${b.serial}</p>
-          <div style="display: flex; justify-content: space-between; border-top: 1px solid black; padding-top: 6px; font-weight: bold;">
-            <small>${b.tipoEmpaque ? b.tipoEmpaque.toUpperCase() : 'PALLET'}<br>[${b.filaBodega}]</small>
-            <span style="font-size: 1.2rem;">${b.kilos.toFixed(1)} kg</span>
-          </div>
-        </div>
-      `).join('');
-
-      pallets.forEach(b => {
-        JsBarcode(`#svg-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
-      });
-
-      abrirModal('modal-etiquetas');
-    }
-
-    function descargarLotePDF() {
-      if (!ultimoLoteGenerado || ultimoLoteGenerado.length === 0) {
-        alert("No hay etiquetas en el lote para descargar.");
-        return;
-      }
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [62, 100]
-      });
-
-      ultimoLoteGenerado.forEach((b, i) => {
-        if (i > 0) doc.addPage([62, 100], "portrait");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        const lineasNombre = doc.splitTextToSize(b.nombreMaterial, 54);
-        doc.text(lineasNombre, 31, 8, { align: "center" });
-
-        doc.setLineWidth(0.3);
-        doc.line(4, 18, 58, 18);
-
-        doc.setFontSize(6.5);
-        doc.setFont("helvetica", "bold");
-        doc.text(`CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}`, 31, 22, { align: "center" });
-
-        const canvas = document.createElement("canvas");
-        JsBarcode(canvas, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
-        const imgBarcode = canvas.toDataURL("image/png");
-        doc.addImage(imgBarcode, "PNG", 6, 26, 50, 24);
-
-        doc.setFont("courier", "bold");
-        doc.setFontSize(11);
-        doc.text(b.serial, 31, 56, { align: "center" });
-
-        doc.rect(4, 62, 54, 28);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.text(b.tipoEmpaque ? b.tipoEmpaque.toUpperCase() : 'PALLET', 8, 72);
-        doc.setFontSize(7.5);
-        doc.text(`[${b.filaBodega}]`, 8, 80);
-
-        doc.setFontSize(13);
-        doc.text(`${b.kilos.toFixed(1)} kg`, 52, 78, { align: "right" });
-      });
-
-      const nombreLote = ultimoLoteGenerado[0].lote || "Lote";
-      doc.save(`Etiquetas_${nombreLote}_62mm.pdf`);
-    }
-
-    // --- GESTIÓN DE CÓDIGO ÚNICO FIJO EN NIVEL 1 ---
-    function abrirModalCrearSlotFijo(fila, pos, subSlot) {
-      document.getElementById('slot-fijo-fila').value = fila;
-      document.getElementById('slot-fijo-pos').value = pos;
-      document.getElementById('slot-fijo-subslot').value = subSlot;
-
-      const subSlotLetra = (subSlot === 1) ? 'A' : 'B';
-      document.getElementById('slot-fijo-ubicacion-txt').innerText = `${fila} • Nivel 1 (Piso) • Posición ${pos} — Slot ${subSlotLetra}`;
-
-      const selMat = document.getElementById('slot-fijo-material-select');
-      selMat.innerHTML = `<option value="">(Sin asignar material previo / Abierto)</option>` + 
-        state.catalogo.map(c => `<option value="${c.nombre}">${c.nombre} (${c.codigo})</option>`).join('');
-
-      document.getElementById('slot-fijo-codigo-custom').value = `PICK-${fila.replace(/\s+/g, '')}-P${pos}${subSlotLetra}`;
-      abrirModal('modal-crear-slot-fijo');
-    }
-
-    function guardarCodigoFijoSlot() {
-      const fila = document.getElementById('slot-fijo-fila').value;
-      const pos = parseInt(document.getElementById('slot-fijo-pos').value) || 1;
-      const subSlot = parseInt(document.getElementById('slot-fijo-subslot').value) || 1;
-      let codigo = document.getElementById('slot-fijo-codigo-custom').value.trim().toUpperCase();
-      const matNombre = document.getElementById('slot-fijo-material-select').value;
-
-      if (!codigo) {
-        alert("Debes ingresar un código identificador único para este puesto de picking.");
-        return;
-      }
-
-      // Validar si el código ya existe
-      const yaExiste = state.bultos.find(b => b.serial === codigo);
-      if (yaExiste) {
-        alert(`El código '${codigo}' ya está asignado a otro bulto o estación.`);
-        return;
-      }
-
-      const matCat = matNombre ? obtenerMaterialPorNombre(matNombre) : null;
-      const nuevoSlotFijo = {
-        id: crypto.randomUUID(),
-        serial: codigo,
-        codigoMaterial: matCat ? matCat.codigo : "PICKING",
-        nombreMaterial: matNombre || "Estación de Picking Fija",
-        kilos: 0,
-        kilosIniciales: 0,
-        bolsasPorPallet: matCat ? matCat.bolsasPorPallet : 4,
-        pesoBolsa: matCat ? matCat.pesoBolsaDefault : 25,
-        tipoEmpaque: "Estación Fija Picking",
-        lote: "N1-FIJO",
-        filaBodega: fila,
-        posicionFila: pos,
-        nivelApilado: 1,
-        subSlot: subSlot,
-        esSlotFijoN1: true,
-        fechaCreacion: new Date().toISOString(),
-        fechaIngresoBodega: new Date().toISOString(),
-        estado: "En Stock",
-        ajustadoEnTurno: false
-      };
-
-      state.bultos.push(nuevoSlotFijo);
-      guardarTodo();
-      cerrarModal('modal-crear-slot-fijo');
-      renderizarMapa();
-      renderizarBodega();
-      alert(`✅ Puesto Nivel 1 asignado exitosamente con Código Fijo: ${codigo}`);
-    }
-
-    // --- BODEGA Y FIFO ---
-    function setModoOperacion(modo) {
-      state.modoOperacion = modo;
-      const esEntrada = (modo === 'ENTRADA BODEGA');
-      document.getElementById('btn-modo-entrada').className = esEntrada ? 'btn btn-green' : 'btn btn-bordered';
-      document.getElementById('btn-modo-despacho').className = esEntrada ? 'btn btn-bordered' : 'btn btn-orange';
-
-      const banner = document.getElementById('banner-modo');
-      banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
-      banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
-      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO A BODEGA';
-      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock (en Rack podrás elegir Nivel y Posición).' : 'En Rack Nivel 1 se rebaja por bolsas; el encargado abastece porcionado desde Nivel 2+.';
-
-      document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
-      document.getElementById('btn-scanner-principal').innerText = esEntrada ? 'Escanear Entrada a Bodega' : 'Escanear Cualquier Pallet con Cámara';
-      document.getElementById('btn-scanner-principal').className = esEntrada ? 'btn btn-blue' : 'btn btn-orange';
-
-      if (!esEntrada) renderizarBodega();
-    }
-
-    function renderizarBodega() {
-      const cont = document.getElementById('contenedor-fifo-listas');
-      const componentes = obtenerListasFIFOPorComponente();
-
-      if (componentes.length === 0) {
-        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay componentes en stock para despachar.</small>`;
-      } else {
-        cont.innerHTML = componentes.map(g => `
-          <div class="card" style="border-left: 4px solid ${g.usaFIFO ? 'var(--orange)' : 'var(--blue)'};">
-            <div style="display: flex; justify-content: space-between;">
-              <div>
-                <strong>${g.nombreMaterial}</strong><br>
-                <small style="color: var(--secondary-text); font-family: monospace;">CÓDIGO: ${g.codigoMaterial} • ${g.usaFIFO ? 'FIFO Activo' : 'FIFO Desactivado (Libre)'}</small>
-              </div>
-              <div style="text-align: right;">
-                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} cód/pallets</b><br>
-                <small>${g.totalKilos.toFixed(0)} kg en total</small>
-              </div>
-            </div>
-
-            ${g.usaFIFO ? `
-              <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <span style="font-size: 0.7rem; font-weight: 900; color: var(--orange);">PRIORITARIO FIFO:</span>
-                  <b style="font-family: monospace; font-size: 1rem; margin-left: 4px;">${g.palletPrioritario.serial}</b>
-                  <span style="font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
-                    ${g.palletPrioritario.filaBodega} (N${g.palletPrioritario.nivelApilado} - Pos ${g.palletPrioritario.posicionFila})
-                  </span><br>
-                  <small style="color: var(--secondary-text);">Lote: ${g.palletPrioritario.lote} • Ingreso: ${new Date(g.palletPrioritario.fechaIngresoBodega || g.palletPrioritario.fechaCreacion).toLocaleDateString()}</small><br>
-                  <b style="color: var(--orange); font-size: 0.85rem;">${g.palletPrioritario.kilos.toFixed(0)} kg</b>
-                </div>
-                <button class="btn btn-orange" onclick="iniciarValidacionSalida('${g.palletPrioritario.serial}', '${g.palletPrioritario.filaBodega}', '${g.nombreMaterial}')">Validar Salida</button>
-              </div>
-
-              ${g.palletsEnStock.length > 1 ? `
-                <div style="margin-top: 6px;">
-                  <small style="color: var(--secondary-text); font-size: 0.7rem;">Siguientes en cola:</small>
-                  <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
-                    ${g.palletsEnStock.slice(1).map(p => `
-                      <div style="background: var(--subbox-bg); border: 1px solid var(--border); padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap;">
-                        <b>${p.serial}</b> ${p.filaBodega} (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-            ` : `
-              <div style="background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.25); border-radius: 8px; padding: 8px; margin-top: 8px;">
-                <small style="color: var(--blue); font-weight: bold; font-size: 0.72rem;">PICKING NIVEL 1 (PISO) — Retiro por Bolsas:</small>
-                <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 6px;">
-                  ${g.palletsPickingN1.length > 0 ? g.palletsPickingN1.map(p => {
-                    const pBolsa = p.pesoBolsa || 25;
-                    const bls = Math.round(p.kilos / pBolsa);
-                    return `
-                    <div style="background: var(--card); border: 1.5px solid var(--green); padding: 6px 8px; border-radius: 6px; font-size: 0.72rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                      <div>
-                        <b>${p.serial}</b> <span style="color: var(--green); font-weight: bold;">[N1-Pos ${p.posicionFila}]</span><br>
-                        <small>${p.filaBodega} • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</small>
-                      </div>
-                      <button class="btn btn-green" style="padding: 4px 8px; font-size: 0.7rem;" onclick="iniciarValidacionSalida('${p.serial}', '${p.filaBodega}', '${g.nombreMaterial}')">Sacar Bolsas</button>
-                    </div>
-                  `; }).join('') : `<small style="color: var(--red); font-weight: bold; font-size: 0.72rem;">⚠️ Sin bolsas disponibles en Nivel 1. El encargado debe abastecer desde Nivel 2+.</small>`}
-                </div>
-                ${g.palletsReservaAltura.length > 0 ? `
-                  <div style="margin-top: 8px; border-top: 1px dashed rgba(0,122,255,0.3); padding-top: 6px;">
-                    <small style="color: var(--secondary-text); font-size: 0.7rem;">En Reserva Altura (Nivel 2+ Encargado): ${g.palletsReservaAltura.length} pallets</small>
-                    <div style="display: flex; gap: 6px; overflow-x: auto; margin-top: 4px;">
-                      ${g.palletsReservaAltura.map(p => {
-                        const pBolsa = p.pesoBolsa || 25;
-                        const bls = Math.floor(p.kilos / pBolsa);
-                        return `
-                        <div style="background: var(--subbox-bg); border: 1px solid rgba(0,122,255,0.3); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                          <span><b>${p.serial}</b> (N${p.nivelApilado}-P${p.posicionFila}) • ${p.kilos.toFixed(0)}k (${bls} bls x ${pBolsa}k)</span>
-                          <button class="btn btn-blue" style="padding: 2px 6px; font-size: 0.65rem;" onclick="abrirModalUbicacionRack('${p.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas a N1</button>
-                        </div>
-                      `; }).join('')}
-                    </div>
-                  </div>
-                ` : ''}
-              </div>
-            `}
-          </div>
-        `).join('');
-      }
-
-      const regCont = document.getElementById('lista-ultimos-registros');
-      regCont.innerHTML = state.movimientos.slice(0, 3).map(m => `
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 0.5px solid var(--border); padding-bottom: 4px;">
-          <div>
-            <b>${m.serialBulto} • ${m.nombreMaterial}</b><br>
-            <small style="color: var(--secondary-text);">${m.detalle}</small>
-          </div>
-          <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-        </div>
-      `).join('');
-    }
-
-    // --- CONSUMO / RETIRO DE BOLSAS EN NIVEL 1 DE RACK ---
-    function abrirModalConsumoBolsasN1(serial) {
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      if (bulto.kilos <= 0) {
-        alert(`La estación ${bulto.serial} se encuentra actualmente vacía (0 kg). El encargado debe abastecerla desde el Nivel 2+ antes de retirar bolsas.`);
-        return;
-      }
-
-      const pBolsa = bulto.pesoBolsa || (obtenerMaterialPorNombre(bulto.nombreMaterial)?.pesoBolsaDefault) || 25;
-      document.getElementById('consumo-n1-serial').value = serial;
-      document.getElementById('consumo-n1-peso-bolsa').value = pBolsa;
-      const bolsasTotales = Math.max(1, Math.floor(bulto.kilos / pBolsa));
-      document.getElementById('consumo-n1-cant-bolsas').value = Math.min(1, bolsasTotales);
-      document.getElementById('consumo-n1-motivo').value = "Consumo turno producción";
-
-      document.getElementById('consumo-n1-pallet-info').innerText = `${bulto.serial} - ${bulto.nombreMaterial} en [${bulto.filaBodega} Nivel 1 Pos ${bulto.posicionFila}]\nSaldo disponible: ${bulto.kilos.toFixed(1)} kg (~${bolsasTotales} bolsas de ${pBolsa} kg).`;
-
-      recalcularConsumoBolsasN1();
-      abrirModal('modal-consumo-bolsas-n1');
-    }
-
-    function setBolsasConsumoN1(cant) {
-      document.getElementById('consumo-n1-cant-bolsas').value = cant;
-      recalcularConsumoBolsasN1();
-    }
-
-    function recalcularConsumoBolsasN1() {
-      const serial = document.getElementById('consumo-n1-serial').value;
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || (bulto.pesoBolsa || 25);
-      const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
-      const kilosSacar = pesoBolsa * cantBolsas;
-      const saldoFinal = Math.max(0, bulto.kilos - kilosSacar);
-
-      const resumen = document.getElementById('consumo-n1-resumen');
-      if (kilosSacar > bulto.kilos) {
-        resumen.style.color = 'var(--red)';
-        resumen.innerText = `⚠️ No hay suficientes bolsas (intentas sacar ${kilosSacar.toFixed(1)} kg y solo quedan ${bulto.kilos.toFixed(1)} kg).`;
-      } else {
-        resumen.style.color = 'var(--green)';
-        resumen.innerText = `Se retirarán ${cantBolsas} bolsa(s) = ${kilosSacar.toFixed(1)} kg para Planta.\nQuedarán en el Nivel 1: ${saldoFinal.toFixed(1)} kg (~${Math.floor(saldoFinal / pesoBolsa)} bolsas).`;
-      }
-    }
-
-    function confirmarConsumoBolsasN1() {
-      const serial = document.getElementById('consumo-n1-serial').value;
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      const pesoBolsa = parseFloat(document.getElementById('consumo-n1-peso-bolsa').value) || (bulto.pesoBolsa || 25);
-      const cantBolsas = parseInt(document.getElementById('consumo-n1-cant-bolsas').value) || 1;
-      const kilosSacar = pesoBolsa * cantBolsas;
-      const motivo = document.getElementById('consumo-n1-motivo').value.trim() || "Consumo producción";
-
-      if (cantBolsas <= 0 || isNaN(kilosSacar) || kilosSacar <= 0) {
-        alert("Ingresa una cantidad válida de bolsas.");
-        return;
-      }
-      if (kilosSacar > bulto.kilos) {
-        alert(`No puedes retirar ${kilosSacar.toFixed(1)} kg porque el código solo tiene ${bulto.kilos.toFixed(1)} kg.`);
-        return;
-      }
-
-      // Rebajar kilos del código que permanece en Nivel 1.
-      // Si llega a 0 kg, PERMANECE en Nivel 1 como puesto único y fijo
-      bulto.kilos = Math.max(0, bulto.kilos - kilosSacar);
-
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: bulto.serial,
-        nombreMaterial: bulto.nombreMaterial,
-        kilos: kilosSacar,
-        tipo: "PICKING BOLSAS N1 (PRODUCCIÓN)",
-        detalle: `Operador retiró ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) desde ${bulto.filaBodega} (Nivel 1 - Pos ${bulto.posicionFila}). Motivo: ${motivo}. Saldo en piso: ${bulto.kilos.toFixed(1)} kg`
-      });
-
-      state.contador++;
-      const serialConsumo = `PLT-${String(state.contador).padStart(5, '0')}`;
-      const bultoPlanta = {
-        id: crypto.randomUUID(),
-        serial: serialConsumo,
-        codigoMaterial: bulto.codigoMaterial,
-        nombreMaterial: bulto.nombreMaterial,
-        kilos: kilosSacar,
-        kilosIniciales: kilosSacar,
-        pesoBolsa: pesoBolsa,
-        tipoEmpaque: `${cantBolsas} Bolsa(s) x ${pesoBolsa}kg`,
-        lote: bulto.lote,
-        filaBodega: "Planta / Operación",
-        posicionFila: 1,
-        nivelApilado: 1,
-        fechaCreacion: new Date().toISOString(),
-        fechaIngresoBodega: new Date().toISOString(),
-        estado: "En Tránsito",
-        ajustadoEnTurno: false
-      };
-      state.bultos.push(bultoPlanta);
-
-      guardarTodo();
-      cerrarModal('modal-consumo-bolsas-n1');
-      cerrarModal('modal-pallet-mapa');
-      renderizarBodega();
-      renderizarMapa();
-      renderizarProduccion();
-      alert(`Retiro exitoso: ${cantBolsas} bolsa(s) (${kilosSacar.toFixed(1)} kg) enviadas a Planta.\nSaldo restante en código fijo ${bulto.serial}: ${bulto.kilos.toFixed(1)} kg.`);
-    }
-
-    // --- SELECTOR DE POSICIÓN Y ABASTECIMIENTO PORCIONADO EN RACK ---
-    function setBolsasAbastecer(cant) {
-      document.getElementById('abast-cant-bolsas').value = cant;
-      recalcularPorcionadoBolsas();
-    }
-
-    function toggleModalidadAbastecimiento() {
-      const mod = document.getElementById('abast-modalidad').value;
-      document.getElementById('subbloque-porcionado-bolsas').style.display = (mod === 'PORCIONADO') ? 'block' : 'none';
-      recalcularPorcionadoBolsas();
-    }
-
-    function recalcularPorcionadoBolsas() {
-      const serial = document.getElementById('rack-sel-serial').value;
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || (bulto.pesoBolsa || 25);
-      const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
-      const kilosBajar = pesoBolsa * cantBolsas;
-      const bolsasDisponibles = Math.floor(bulto.kilos / pesoBolsa);
-      const saldoRestante = Math.max(0, bulto.kilos - kilosBajar);
-
-      const resumen = document.getElementById('resumen-porcionado-kilos');
-      if (kilosBajar > bulto.kilos) {
-        resumen.style.color = 'var(--red)';
-        resumen.innerText = `⚠️ Excede el saldo del pallet (${bulto.kilos.toFixed(1)} kg / ${bolsasDisponibles} bolsas disponibles).`;
-      } else {
-        resumen.style.color = 'var(--green)';
-        resumen.innerText = `Se bajarán ${cantBolsas} bolsa(s) = ${kilosBajar.toFixed(1)} kg a Nivel 1.\nQuedarán arriba en ${bulto.serial}: ${saldoRestante.toFixed(1)} kg (${Math.floor(saldoRestante / pesoBolsa)} bolsas).`;
-      }
-    }
-
-    function actualizarOpcionesDestinoPorcionado() {
-      const modo = document.getElementById('rack-sel-modo').value;
-      if (modo !== 'ABASTECER_N1') return;
-
-      const fila = document.getElementById('rack-sel-fila').value;
-      const pos = parseInt(document.getElementById('rack-sel-posicion').value) || 1;
-      const serialMadre = document.getElementById('rack-sel-serial').value;
-      const bultoMadre = state.bultos.find(b => b.serial === serialMadre);
-
-      const puestosN1 = state.bultos.filter(b =>
-        b.filaBodega === fila &&
-        b.estado === 'En Stock' &&
-        b.nivelApilado === 1 &&
-        b.posicionFila === pos
-      );
-
-      const selDestino = document.getElementById('abast-destino-codigo');
-      let html = "";
-
-      if (puestosN1.length > 0) {
-        puestosN1.forEach(c => {
-          html += `<option value="${c.serial}">📦 Cargar en código fijo ${c.serial} (Saldo actual: ${c.kilos.toFixed(0)} kg)</option>`;
-        });
-      } else {
-        html = `<option value="NUEVO">➕ Crear código único de puesto en Pos ${pos}</option>`;
-      }
-
-      selDestino.innerHTML = html;
-    }
-
-    function abrirModalUbicacionRack(serial, modo) {
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      const pBolsa = bulto.pesoBolsa || (obtenerMaterialPorNombre(bulto.nombreMaterial)?.pesoBolsaDefault) || 25;
-      document.getElementById('rack-sel-serial').value = serial;
-      document.getElementById('rack-sel-modo').value = modo;
-
-      const selFila = document.getElementById('rack-sel-fila');
-      const racksDisponibles = state.filasBodega.filter(f => f !== nombreFilaRetornados);
-      selFila.innerHTML = racksDisponibles.map(f => `<option value="${f}" ${f === bulto.filaBodega ? 'selected' : ''}>${f} (${getConfigFila(f).tipo})</option>`).join('');
-
-      const bloquePorcionado = document.getElementById('bloque-abastecer-porcionado');
-
-      if (modo === 'ENTRADA') {
-        bloquePorcionado.style.display = 'none';
-        document.getElementById('titulo-modal-rack').innerText = `Ubicar ${serial} en Rack`;
-        document.getElementById('subtitulo-modal-rack').innerText = `${bulto.nombreMaterial} (${bulto.kilos.toFixed(1)} kg) — Elige el Nivel y la Posición:`;
-      } else if (modo === 'ABASTECER_N1') {
-        bloquePorcionado.style.display = 'block';
-        document.getElementById('abast-modalidad').value = 'PORCIONADO';
-        document.getElementById('abast-peso-bolsa').value = pBolsa;
-        const maxSugerido = Math.min(4, Math.max(1, Math.floor(bulto.kilos / pBolsa)));
-        document.getElementById('abast-cant-bolsas').value = maxSugerido;
-        toggleModalidadAbastecimiento();
-
-        document.getElementById('titulo-modal-rack').innerText = `⬇️ Abastecer a Nivel 1 (Porcionado / Bolsas)`;
-        document.getElementById('subtitulo-modal-rack').innerText = `Pallet Madre ${serial} en Nivel ${bulto.nivelApilado} (Pos ${bulto.posicionFila}) — Saldo: ${bulto.kilos.toFixed(1)} kg (${Math.floor(bulto.kilos / pBolsa)} bolsas de ${pBolsa}kg):`;
-      } else {
-        bloquePorcionado.style.display = 'none';
-        document.getElementById('titulo-modal-rack').innerText = `Mover Ubicación de ${serial}`;
-        document.getElementById('subtitulo-modal-rack').innerText = `Selecciona el nuevo Nivel y Posición dentro del Rack:`;
-      }
-
-      actualizarOpcionesNivelPosRack();
-      abrirModal('modal-ubicacion-rack');
-    }
-
-    function actualizarOpcionesNivelPosRack() {
-      const fila = document.getElementById('rack-sel-fila').value;
-      const modo = document.getElementById('rack-sel-modo').value;
-      const cfg = getConfigFila(fila);
-      const maxNiveles = cfg.tipo === 'Rack' ? (parseInt(cfg.niveles) || 3) : 2;
-
-      const selNivel = document.getElementById('rack-sel-nivel');
-      let opcionesNiv = "";
-
-      if (modo === 'ABASTECER_N1') {
-        opcionesNiv = `<option value="1" selected>Nivel 1 (A Piso - Picking Operadores - Horizontal 2 Cód/Pos)</option>`;
-      } else {
-        for (let n = 1; n <= maxNiveles; n++) {
-          const desc = (cfg.tipo === 'Rack')
-            ? (n === 1 ? 'Nivel 1 (A Piso - Horizontal 2 Cód/Pos)' : `Nivel ${n} (Altura - Reserva Encargado)`)
-            : (n === 1 ? 'Nivel 1 (Piso)' : 'Nivel 2 (Arriba)');
-          opcionesNiv += `<option value="${n}">${desc}</option>`;
-        }
-      }
-      selNivel.innerHTML = opcionesNiv;
-      actualizarPosicionesDisponiblesRack();
-    }
-
-    function actualizarPosicionesDisponiblesRack() {
-      const fila = document.getElementById('rack-sel-fila').value;
-      const nivel = parseInt(document.getElementById('rack-sel-nivel').value) || 1;
-      const serialActual = document.getElementById('rack-sel-serial').value;
-      const cfg = getConfigFila(fila);
-      const maxPos = Math.max(1, parseInt(cfg.posicionesPorNivel) || 4);
-
-      document.getElementById('info-slot-nivel1').style.display = (cfg.tipo === 'Rack' && nivel === 1) ? 'block' : 'none';
-
-      const enFilaNivel = state.bultos.filter(b =>
-        b.filaBodega === fila &&
-        b.estado === 'En Stock' &&
-        b.nivelApilado === nivel &&
-        b.serial !== serialActual
-      );
-
-      const capacidadPorPosicion = (cfg.tipo === 'Rack' && nivel === 1) ? 2 : 1;
-
-      const selPos = document.getElementById('rack-sel-posicion');
-      let htmlPos = "";
-      let primeraLibreElegida = false;
-
-      for (let p = 1; p <= maxPos; p++) {
-        const ocupantes = enFilaNivel.filter(b => b.posicionFila === p);
-        const cant = ocupantes.length;
-        const libre = cant < capacidadPorPosicion;
-        const nombresOcupantes = ocupantes.map(o => `${o.serial} (${o.kilos.toFixed(0)}k)`).join(' + ');
-
-        let estadoTexto = "";
-        if (capacidadPorPosicion === 2) {
-          estadoTexto = `(${cant}/2 puestos${cant > 0 ? ': ' + nombresOcupantes : ' - Disponibles'})`;
-        } else {
-          estadoTexto = cant === 0 ? '(Libre)' : `(Ocupado por ${nombresOcupantes})`;
-        }
-
-        const selectedAttr = (libre && !primeraLibreElegida) ? 'selected' : '';
-        if (libre && !primeraLibreElegida) primeraLibreElegida = true;
-
-        htmlPos += `<option value="${p}" ${selectedAttr}>Posición ${p} ${estadoTexto}</option>`;
-      }
-      selPos.innerHTML = htmlPos;
-      actualizarOpcionesDestinoPorcionado();
-    }
-
-    function confirmarUbicacionRack() {
-      const serial = document.getElementById('rack-sel-serial').value;
-      const modo = document.getElementById('rack-sel-modo').value;
-      const filaDestino = document.getElementById('rack-sel-fila').value;
-      const nivelDestino = parseInt(document.getElementById('rack-sel-nivel').value) || 1;
-      const posDestino = parseInt(document.getElementById('rack-sel-posicion').value) || 1;
-
-      const bulto = state.bultos.find(b => b.serial === serial);
-      if (!bulto) return;
-
-      const cfg = getConfigFila(filaDestino);
-      const capacidadMax = (cfg.tipo === 'Rack' && nivelDestino === 1) ? 2 : 1;
-      const ocupantes = state.bultos.filter(b =>
-        b.filaBodega === filaDestino &&
-        b.estado === 'En Stock' &&
-        b.nivelApilado === nivelDestino &&
-        b.posicionFila === posDestino &&
-        b.serial !== serial
-      );
-
-      // ABASTECIMIENTO PORCIONADO (BOLSAS) A CÓDIGO FIJO DEL NIVEL 1
-      if (modo === 'ABASTECER_N1' && document.getElementById('abast-modalidad').value === 'PORCIONADO') {
-        const pesoBolsa = parseFloat(document.getElementById('abast-peso-bolsa').value) || (bulto.pesoBolsa || 25);
-        const cantBolsas = parseInt(document.getElementById('abast-cant-bolsas').value) || 1;
-        const kilosBajar = pesoBolsa * cantBolsas;
-        const destinoCodigo = document.getElementById('abast-destino-codigo').value;
-
-        if (cantBolsas <= 0 || isNaN(kilosBajar) || kilosBajar <= 0) {
-          alert("Ingresa una cantidad válida de bolsas a bajar.");
-          return;
-        }
-        if (kilosBajar > bulto.kilos) {
-          alert(`No puedes bajar ${kilosBajar.toFixed(1)} kg (${cantBolsas} bolsas) porque el pallet ${bulto.serial} solo tiene ${bulto.kilos.toFixed(1)} kg.`);
-          return;
-        }
-
-        const nivelOrigen = bulto.nivelApilado;
-        const posOrigen = bulto.posicionFila;
-        bulto.kilos = Math.max(0, bulto.kilos - kilosBajar);
-        if (bulto.kilos === 0) {
-          bulto.estado = "Consumido";
-        }
-
-        if (destinoCodigo && destinoCodigo !== 'NUEVO') {
-          // Cargar sobre el código único y fijo existente en N1
-          const codExistente = state.bultos.find(b => b.serial === destinoCodigo);
-          if (codExistente) {
-            codExistente.kilos += kilosBajar;
-            codExistente.codigoMaterial = bulto.codigoMaterial;
-            codExistente.nombreMaterial = bulto.nombreMaterial;
-            codExistente.lote = bulto.lote;
-            codExistente.pesoBolsa = pesoBolsa;
-
-            state.movimientos.unshift({
-              id: crypto.randomUUID(),
-              fecha: new Date().toISOString(),
-              serialBulto: codExistente.serial,
-              nombreMaterial: codExistente.nombreMaterial,
-              kilos: kilosBajar,
-              tipo: "ABASTECIMIENTO PORCIONADO (N2+ ➔ N1)",
-              detalle: `Se bajaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) desde ${bulto.serial} (N${nivelOrigen}-P${posOrigen}) cargando el código fijo de N1 ${codExistente.serial} (Pos ${posDestino}). Saldo en madre: ${bulto.kilos.toFixed(1)} kg`
-            });
-
-            guardarTodo();
-            cerrarModal('modal-ubicacion-rack');
-            cerrarModal('modal-pallet-mapa');
-            renderizarBodega();
-            renderizarMapa();
-            alert(`¡Abastecimiento exitoso!\nSe cargaron ${cantBolsas} bolsa(s) (${kilosBajar.toFixed(1)} kg) en el código fijo ${codExistente.serial} (Nivel 1, Posición ${posDestino}).`);
-            return;
-          }
-        }
-
-        // Si no existía código fijo en este puesto, pedir definirlo
-        const subSlotLibre = (ocupantes.length === 0) ? 1 : 2;
-        abrirModalCrearSlotFijo(filaDestino, posDestino, subSlotLibre);
-        return;
-      }
-
-      // ENTRADA O MOVIMIENTO DE PALLET COMPLETO
-      if (ocupantes.length >= capacidadMax) {
-        if (!confirm(`⚠️ La Posición ${posDestino} del Nivel ${nivelDestino} ya tiene ${ocupantes.length}/${capacidadMax} código(s) asignado(s).\n¿Deseas ubicarlo igualmente aquí?`)) {
-          return;
-        }
-      }
-
-      const ubicacionAnterior = `${bulto.filaBodega} (N${bulto.nivelApilado}-Pos ${bulto.posicionFila})`;
-      bulto.filaBodega = filaDestino;
-      bulto.nivelApilado = nivelDestino;
-      bulto.posicionFila = posDestino;
-      bulto.subSlot = ocupantes.length + 1;
-
-      if (modo === 'ENTRADA') {
-        bulto.estado = "En Stock";
-        bulto.fechaIngresoBodega = new Date().toISOString();
-
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: bulto.kilos,
-          tipo: "ENTRADA BODEGA (RACK)",
-          detalle: `Ingreso a ${bulto.filaBodega} -> Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila} (${bulto.nivelApilado === 1 ? 'Piso' : 'Reserva Altura'}) (+ ${bulto.kilos.toFixed(1)} kg)`
-        });
-      } else if (modo === 'ABASTECER_N1') {
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: bulto.kilos,
-          tipo: "ABASTECIMIENTO ENCARGADO (N2+ ➔ N1)",
-          detalle: `Pallet completo bajado por encargado desde ${ubicacionAnterior} hacia Nivel 1 (Pos ${bulto.posicionFila})`
-        });
-      } else {
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: bulto.kilos,
-          tipo: "REUBICACIÓN EN RACK",
-          detalle: `Movido desde ${ubicacionAnterior} hacia ${bulto.filaBodega} (Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila})`
-        });
-      }
-
-      guardarTodo();
-      cerrarModal('modal-ubicacion-rack');
-      cerrarModal('modal-pallet-mapa');
-      renderizarBodega();
-      renderizarMapa();
-      alert(`Ubicación confirmada: ${bulto.serial} en ${bulto.filaBodega} — Nivel ${bulto.nivelApilado}, Posición ${bulto.posicionFila}`);
-    }
-
-    function procesarEscaneoBodega(serial, forzarSinFIFO = false) {
-      const idx = state.bultos.findIndex(b => b.serial === serial);
-      if (idx === -1) { alert(`El código '${serial}' no existe en la base de datos.`); return; }
-
-      let bulto = state.bultos[idx];
-
-      if (state.modoOperacion === "ENTRADA BODEGA") {
-        if (bulto.estado === "En Stock") { alert(`¡Alerta! El bulto ${bulto.serial} ya está EN STOCK en bodega.`); return; }
-
-        const cfg = getConfigFila(bulto.filaBodega);
-        if (cfg.tipo === "Rack") {
-          abrirModalUbicacionRack(bulto.serial, "ENTRADA");
-          return;
-        }
-
-        bulto.estado = "En Stock";
-        bulto.fechaIngresoBodega = new Date().toISOString();
-
-        const enFila = state.bultos.filter(b => b.filaBodega === bulto.filaBodega && b.estado === 'En Stock' && b.id !== bulto.id);
-        const cantidadActual = enFila.length;
-
-        bulto.posicionFila = Math.floor(cantidadActual / 2) + 1;
-        bulto.nivelApilado = (cantidadActual % 2 === 0) ? 1 : 2;
-
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: bulto.kilos,
-          tipo: "ENTRADA BODEGA",
-          detalle: `Ingreso formal a ${bulto.filaBodega} (Pos ${bulto.posicionFila}-N${bulto.nivelApilado}) (+ ${bulto.kilos.toFixed(1)} kg)`
-        });
-
-      } else {
-        if (bulto.estado === "En Tránsito") { alert(`El bulto ${bulto.serial} ya se encuentra despachado en Tránsito.`); return; }
-        if (bulto.estado === "Consumido" && !bulto.esSlotFijoN1) { alert(`El bulto ${bulto.serial} figura como consumido (0 kg).`); return; }
-        if (bulto.estado === "Creado") { alert(`El bulto ${bulto.serial} figura como 'Creado' pero no ha ingresado formalmente a stock.`); return; }
-
-        const cfg = getConfigFila(bulto.filaBodega);
-        
-        // CONDICIÓN ESPECIAL RACK: Nivel 1 no se va completo, se rebaja por bolsas
-        if (cfg.tipo === "Rack" && bulto.nivelApilado === 1) {
-          abrirModalConsumoBolsasN1(bulto.serial);
-          return;
-        }
-
-        // Si está en Nivel 2+ de Rack, el operador no puede sacarlo directamente; debe abastecerse a N1
-        if (cfg.tipo === "Rack" && bulto.nivelApilado > 1 && !forzarSinFIFO) {
-          const pBolsa = bulto.pesoBolsa || 25;
-          const msgAltura = `⚠️ Pallet en Reserva de Altura (Nivel ${bulto.nivelApilado})\n\nEn Rack, los operadores extraen por bolsas del Nivel 1 (A Piso) y el encargado abastece bajando bolsas de ${pBolsa} kg desde el Nivel 2+.\n\n¿Deseas abrir el panel para bajar bolsas a Nivel 1 ahora mismo?`;
-          if (confirm(msgAltura)) {
-            abrirModalUbicacionRack(bulto.serial, "ABASTECER_N1");
-          }
-          return;
-        }
-
-        const usaFIFO = materialUsaFIFO(bulto.nombreMaterial);
-
-        if (usaFIFO && !forzarSinFIFO) {
-          const mismoMaterial = state.bultos.filter(b => b.nombreMaterial === bulto.nombreMaterial && b.estado === 'En Stock' && b.kilos > 0).sort(compararFIFO);
-          if (mismoMaterial.length > 0 && mismoMaterial[0].serial !== bulto.serial) {
-            const masAntiguo = mismoMaterial[0];
-            const msg = `⚠️ Advertencia de Quiebre FIFO\n\nPara '${bulto.nombreMaterial}', el pallet prioritario está en [${masAntiguo.filaBodega}] Nivel ${masAntiguo.nivelApilado} - Posición ${masAntiguo.posicionFila}: ${masAntiguo.serial} (Lote: ${masAntiguo.lote}).\n\n¿Deseas forzar el despacho fuera de regla?`;
-            if (confirm(msg)) {
-              procesarEscaneoBodega(serial, true);
-            }
-            return;
-          }
-        }
-
-        bulto.estado = "En Tránsito";
-        bulto.ajustadoEnTurno = false;
-
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: bulto.kilos,
-          tipo: usaFIFO ? "DESPACHO PRODUCCIÓN (FIFO)" : "PICKING PRODUCCIÓN (SIN FIFO)",
-          detalle: `Salida desde ${bulto.filaBodega} (Nivel ${bulto.nivelApilado} - Pos ${bulto.posicionFila}) a Producción (${bulto.kilos.toFixed(1)} kg)`
-        });
-      }
-
-      guardarTodo();
-      renderizarBodega();
-      alert(`Operación completada con éxito para ${serial}`);
-    }
-
-    function validarManual() {
-      const input = document.getElementById('serial-manual');
-      const val = input.value.trim().toUpperCase();
-      if (val) {
-        procesarEscaneoBodega(val);
-        input.value = "";
-      }
-    }
-
-    // --- MAPA VISUAL ---
+    // --- MAPA VISUAL COMPACTO HORIZONTAL ---
     function renderizarMapa() {
       const cont = document.getElementById('mapa-filas-render');
       const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
@@ -1839,68 +797,54 @@
       cont.innerHTML = todas.map(fila => {
         const esRet = (fila === nombreFilaRetornados);
         const cfg = getConfigFila(fila);
-        const palletsFila = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
+        const esRack = (!esRet && (cfg.tipo === "Rack" || state.versionApp === "V2"));
 
-        if (!esRet && cfg.tipo === "Rack") {
-          const maxNivelRack = Math.max(
-            parseInt(cfg.niveles) || 3,
-            palletsFila.reduce((m, b) => Math.max(m, b.nivelApilado), 0)
-          );
-          const posPorNivel = Math.max(
-            parseInt(cfg.posicionesPorNivel) || 4,
-            palletsFila.reduce((m, b) => Math.max(m, b.posicionFila), 0)
-          );
+        if (esRack) {
+          // MODO RACK (V2 COLORANTES / POSICIÓN ÚNICA COMPACTA HORIZONTAL)
+          const niveles = Math.max(1, parseInt(cfg.niveles) || 3);
+          const posPorNivel = Math.max(1, parseInt(cfg.posicionesPorNivel) || 4);
 
           let nivelesHtml = "";
-          for (let n = maxNivelRack; n >= 1; n--) {
-            let celdasPosHtml = "";
+          for (let n = niveles; n >= 1; n--) {
+            let slotsNivel = "";
             for (let p = 1; p <= posPorNivel; p++) {
-              const palletsEnPos = palletsFila.filter(b => b.nivelApilado === n && b.posicionFila === p);
+              // Código único permanente de la posición física en Rack
+              const codigoPosicion = `${fila.replace(/\s+/g, '')}-N${n}-P${p}`;
+              const ocupante = state.bultos.find(b =>
+                b.filaBodega === fila &&
+                b.nivelApilado === n &&
+                b.posicionFila === p &&
+                b.estado === 'En Stock'
+              );
 
-              if (n === 1) {
-                // NIVEL 1 (A PISO): DISPOSICIÓN HORIZONTAL (LADO A LADO) CON 2 CÓDIGOS ÚNICOS FIJOS
-                const codA = palletsEnPos.find(b => b.subSlot === 1) || palletsEnPos[0] || null;
-                const codB = palletsEnPos.find(b => b.subSlot === 2 && b !== codA) || (palletsEnPos.length > 1 ? palletsEnPos[1] : null);
+              const tieneStock = ocupante && ocupante.kilos > 0;
+              const pBolsa = ocupante ? (ocupante.pesoBolsa || 15) : 15;
+              const bls = tieneStock ? Math.round(ocupante.kilos / pBolsa) : 0;
 
-                celdasPosHtml += `
-                  <div class="rack-pos-cell rack-pos-cell-horizontal" style="border-color: rgba(52, 199, 89, 0.5); background: rgba(52, 199, 89, 0.04);">
-                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--green); display: flex; justify-content: space-between; margin-bottom: 2px;">
-                      <span>Posición ${p} (Piso)</span><span>Horizontal (Slot A y B)</span>
-                    </small>
-                    <div class="rack-pos-slots-horizontal">
-                      ${renderSlotNivel1Fijo(codA, fila, p, 1, 'Slot A')}
-                      ${renderSlotNivel1Fijo(codB, fila, p, 2, 'Slot B')}
-                    </div>
+              slotsNivel += `
+                <div class="pallet-slot ${tieneStock ? 'cargado' : 'vacio'}" onclick="abrirOperacionPosicionRack('${codigoPosicion}', '${fila}', ${n}, ${p})">
+                  <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                    <span style="color: var(--blue); font-size: 0.7rem;">${codigoPosicion}</span>
+                    ${tieneStock ? '<span style="color: var(--green);">●</span>' : '<span style="color: var(--secondary-text);">○</span>'}
                   </div>
-                `;
-              } else {
-                // NIVEL 2+: RESERVA ENCARGADO
-                const palletRes = palletsEnPos[0] || null;
-                const pBolsa = palletRes ? (palletRes.pesoBolsa || 25) : 25;
-                const bls = palletRes ? Math.floor(palletRes.kilos / pBolsa) : 0;
-                celdasPosHtml += `
-                  <div class="rack-pos-cell">
-                    <small style="font-size: 0.65rem; font-weight: bold; color: var(--secondary-text); display: flex; justify-content: space-between;">
-                      <span>Pos ${p}</span><span>${palletRes ? `${bls} bls x ${pBolsa}k` : 'Reserva'}</span>
-                    </small>
-                    ${renderSlot(palletRes, `Vacío (Pos ${p})`, false)}
-                    ${palletRes ? `
-                      <button class="btn btn-blue" style="font-size: 0.65rem; padding: 3px 6px; width: 100%; margin-top: 2px;" onclick="abrirModalUbicacionRack('${palletRes.serial}', 'ABASTECER_N1')">
-                        ⬇️ Bajar Bolsas a N1
-                      </button>
-                    ` : ''}
+                  <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${tieneStock ? ocupante.nombreMaterial : 'Vacío'}
                   </div>
-                `;
-              }
+                  <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
+                    <span>${tieneStock ? ocupante.lote : '-'}</span>
+                    <b>${tieneStock ? `${ocupante.kilos.toFixed(0)}k (${bls}b)` : '0 kg'}</b>
+                  </div>
+                </div>
+              `;
             }
 
             nivelesHtml += `
-              <div class="pos-box" style="border-left: 4px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
-                <small style="font-size: 0.7rem; color: ${n === 1 ? 'var(--green)' : 'var(--blue)'}; font-weight: bold;">
-                  ${n === 1 ? '🟢 Nivel 1 (A Piso — Horizontal: Códigos Fijos de Picking A y B)' : `🔵 Nivel ${n} (Altura — Reserva Encargado: Bajar porcionado a N1)`}
+              <div class="pos-box" style="border-left: 3px solid ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
+                <small style="font-size: 0.68rem; font-weight: bold; color: ${n === 1 ? 'var(--green)' : 'var(--blue)'};">
+                  Nivel ${n} ${n === 1 ? '(Piso)' : ''}
                 </small>
                 <div class="rack-level-row">
-                  ${celdasPosHtml}
+                  ${slotsNivel}
                 </div>
               </div>
             `;
@@ -1910,20 +854,20 @@
             <div class="fila-col rack-col">
               <div class="fila-header" style="background: rgba(0, 122, 255, 0.15); color: var(--blue);">
                 🗄️ ${fila} (RACK)<br>
-                <small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} puestos/pallets • ${maxNivelRack} Niveles x ${posPorNivel} Pos</small>
+                <small style="font-size: 0.68rem; color: var(--secondary-text);">${niveles} Niveles x ${posPorNivel} Pos (Horizontal)</small>
               </div>
               ${nivelesHtml}
             </div>
           `;
         }
 
-        // MODO PISO TRADICIONAL
+        // MODO PISO (V1 MATERIA PRIMA)
+        const palletsFila = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock');
         const agrupados = {};
         palletsFila.forEach(b => {
           if (!agrupados[b.posicionFila]) agrupados[b.posicionFila] = [];
           agrupados[b.posicionFila].push(b);
         });
-
         const maxPos = Math.max(Object.keys(agrupados).map(Number).reduce((a, b) => Math.max(a, b), 0), 4);
         let posicionesHtml = "";
 
@@ -1935,61 +879,26 @@
           posicionesHtml += `
             <div class="pos-box">
               <small style="font-size: 0.65rem; color: var(--secondary-text); font-weight: bold;">Pos ${p}</small>
-              ${renderSlot(n2, 'N2 (Arriba)', esRet)}
-              ${renderSlot(n1, 'N1 (Piso)', esRet)}
+              ${renderSlotV1(n2, 'N2 (Arriba)')}
+              ${renderSlotV1(n1, 'N1 (Piso)')}
             </div>
           `;
         }
 
         return `
-          <div class="fila-col" style="${esRet ? 'border: 1.5px solid var(--purple); background: rgba(175, 82, 222, 0.08);' : ''}">
-            <div class="fila-header" style="${esRet ? 'color: var(--purple); border-color: var(--purple);' : ''}">
-              ${fila}<br><small style="font-size: 0.7rem; color: var(--secondary-text);">${palletsFila.length} pallets</small>
-            </div>
+          <div class="fila-col">
+            <div class="fila-header">${fila}<br><small style="font-size: 0.68rem;">${palletsFila.length} pallets</small></div>
             ${posicionesHtml}
           </div>
         `;
       }).join('');
     }
 
-    function renderSlotNivel1Fijo(pallet, fila, pos, subSlot, labelSlot) {
-      if (!pallet) {
-        return `
-          <div class="pallet-slot empty" style="border: 1.2px dashed var(--green); color: var(--green); cursor: pointer;" onclick="abrirModalCrearSlotFijo('${fila}', ${pos}, ${subSlot})">
-            + Asignar Cód (${labelSlot})
-          </div>
-        `;
-      }
-
-      const pBolsa = pallet.pesoBolsa || 25;
-      const bls = Math.round(pallet.kilos / pBolsa);
-      const vacio = pallet.kilos <= 0;
-
-      return `
-        <div class="pallet-slot fixed-station" style="${vacio ? 'opacity: 0.7; border-style: dashed;' : ''}" onclick="verDetallePallet('${pallet.serial}')">
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span style="color: var(--blue); font-size: 0.72rem;">${pallet.serial}</span>
-            <small style="font-size: 0.62rem; color: var(--green);">${labelSlot}</small>
-          </div>
-          <div style="font-size: 0.62rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
-            ${pallet.nombreMaterial || 'Estación Picking'}
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
-            <span>${vacio ? 'Disponible' : pallet.lote}</span>
-            <b style="color: ${vacio ? 'var(--secondary-text)' : 'var(--green)'};">${pallet.kilos.toFixed(0)}k (${bls}b)</b>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderSlot(pallet, nivelTexto, esRet) {
-      if (!pallet) return `<div class="pallet-slot empty">Vacío (${nivelTexto})</div>`;
+    function renderSlotV1(pallet, label) {
+      if (!pallet) return `<div class="pallet-slot empty">Vacío (${label})</div>`;
       const esFIFO = esPalletFIFOPrioritario(pallet.serial);
-      const pBolsa = pallet.pesoBolsa || 25;
-      const bls = Math.round(pallet.kilos / pBolsa);
-
       return `
-        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" style="${!esFIFO ? (esRet ? 'background: rgba(175, 82, 222, 0.15); color: var(--purple); border: 1px solid var(--purple);' : 'background: var(--slot-bg); border: 1px solid var(--border);') : ''}" onclick="verDetallePallet('${pallet.serial}')">
+        <div class="pallet-slot ${esFIFO ? 'fifo-star' : ''}" onclick="verDetallePalletV1('${pallet.serial}')">
           <div style="display: flex; justify-content: space-between; font-weight: bold;">
             <span>${pallet.serial}</span>
             ${esFIFO ? '<span>⭐</span>' : ''}
@@ -1997,103 +906,397 @@
           <div style="font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pallet.nombreMaterial}</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-top: 2px;">
             <span>${pallet.lote}</span>
-            <b>${pallet.kilos.toFixed(0)}k (${bls}b)</b>
+            <b>${pallet.kilos.toFixed(0)} kg</b>
           </div>
         </div>
       `;
     }
 
-    function compactarPosiciones() {
-      if (!confirm("¿Deseas compactar pasillos? En las filas de piso se eliminarán posiciones vacías corriendo los pallets hacia el frente.")) return;
+    // --- GESTIÓN DE POSICIÓN RACK (CARGAR / RETIRAR BOLSAS EN CÓDIGO ÚNICO) ---
+    let posicionRackSeleccionada = null;
 
-      const todas = [...state.filasBodega.filter(f => f !== nombreFilaRetornados), nombreFilaRetornados];
-      todas.forEach(fila => {
-        const cfg = getConfigFila(fila);
-        if (fila !== nombreFilaRetornados && cfg.tipo === "Rack") return;
+    function abrirOperacionPosicionRack(codigoPos, fila, nivel, pos) {
+      posicionRackSeleccionada = { codigoPos, fila, nivel, pos };
+      document.getElementById('op-rack-codigo-pos').value = codigoPos;
+      document.getElementById('op-rack-titulo').innerText = `Posición ${codigoPos}`;
 
-        const pallets = state.bultos.filter(b => b.filaBodega === fila && b.estado === 'En Stock' && b.kilos > 0)
-          .sort((a, b) => (a.posicionFila - b.posicionFila) || (a.nivelApilado - b.nivelApilado));
+      const ocupante = state.bultos.find(b =>
+        b.filaBodega === fila &&
+        b.nivelApilado === nivel &&
+        b.posicionFila === pos &&
+        b.estado === 'En Stock'
+      );
 
-        let posActual = 1;
-        let nivelActual = 1;
+      const selMat = document.getElementById('op-rack-material-select');
+      selMat.innerHTML = state.catalogo.map(c => `<option value="${c.nombre}">${c.nombre} (${c.codigo})</option>`).join('');
 
-        pallets.forEach(p => {
-          p.posicionFila = posActual;
-          p.nivelApilado = nivelActual;
-          if (nivelActual === 1) {
-            nivelActual = 2;
-          } else {
-            nivelActual = 1;
-            posActual++;
-          }
-        });
-      });
+      if (ocupante && ocupante.kilos > 0) {
+        document.getElementById('op-rack-subtitulo').innerText = `Stock: ${ocupante.kilos.toFixed(1)} kg (${ocupante.nombreMaterial} • Lote: ${ocupante.lote})`;
+        selMat.value = ocupante.nombreMaterial;
+        document.getElementById('op-rack-lote').value = ocupante.lote;
+        document.getElementById('op-rack-peso-bolsa').value = ocupante.pesoBolsa || 15;
+      } else {
+        document.getElementById('op-rack-subtitulo').innerText = "Posición vacía (0 kg). Asigna material y carga bolsas.";
+        document.getElementById('op-rack-lote').value = "";
+        actualizarValoresBolsaRack();
+      }
+
+      setModoOperarRack('CARGAR');
+      recalcularKilosCargaRack();
+      abrirModal('modal-operar-posicion-rack');
+    }
+
+    function setModoOperarRack(modo) {
+      const formCargar = document.getElementById('form-rack-cargar');
+      const formRetirar = document.getElementById('form-rack-retirar');
+      const btnCargar = document.getElementById('btn-tab-op-cargar');
+      const btnRetirar = document.getElementById('btn-tab-op-retirar');
+
+      if (modo === 'CARGAR') {
+        formCargar.style.display = 'block';
+        formRetirar.style.display = 'none';
+        btnCargar.className = 'btn btn-green';
+        btnRetirar.className = 'btn btn-bordered';
+      } else {
+        formCargar.style.display = 'none';
+        formRetirar.style.display = 'block';
+        btnCargar.className = 'btn btn-bordered';
+        btnRetirar.className = 'btn btn-orange';
+        recalcularKilosRetiroRack();
+      }
+    }
+
+    function actualizarValoresBolsaRack() {
+      const matNombre = document.getElementById('op-rack-material-select').value;
+      const mat = obtenerMaterialPorNombre(matNombre);
+      if (mat) {
+        document.getElementById('op-rack-peso-bolsa').value = mat.pesoBolsaDefault || 15;
+        document.getElementById('op-rack-cant-bolsas').value = mat.bolsasPorPallet || 25;
+      }
+      recalcularKilosCargaRack();
+    }
+
+    function recalcularKilosCargaRack() {
+      const bls = parseFloat(document.getElementById('op-rack-cant-bolsas').value) || 0;
+      const pBolsa = parseFloat(document.getElementById('op-rack-peso-bolsa').value) || 0;
+      document.getElementById('op-rack-total-kilos-txt').innerText = `Total a sumar: ${(bls * pBolsa).toFixed(1)} kg`;
+    }
+
+    function setBolsasRetiroDirecto(num) {
+      document.getElementById('op-rack-retirar-bolsas').value = num;
+      recalcularKilosRetiroRack();
+    }
+
+    function recalcularKilosRetiroRack() {
+      if (!posicionRackSeleccionada) return;
+      const { fila, nivel, pos } = posicionRackSeleccionada;
+      const ocupante = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
+
+      const bls = parseInt(document.getElementById('op-rack-retirar-bolsas').value) || 0;
+      const pBolsa = ocupante ? (ocupante.pesoBolsa || 15) : 15;
+      const kilosRetiro = bls * pBolsa;
+      const saldoRestante = ocupante ? Math.max(0, ocupante.kilos - kilosRetiro) : 0;
+
+      const txt = document.getElementById('op-rack-retiro-kilos-txt');
+      if (!ocupante || ocupante.kilos <= 0) {
+        txt.style.color = 'var(--red)';
+        txt.innerText = "⚠️ La posición está vacía. No hay bolsas que retirar.";
+      } else if (kilosRetiro > ocupante.kilos) {
+        txt.style.color = 'var(--red)';
+        txt.innerText = `⚠️ Excede el saldo disponible (${ocupante.kilos.toFixed(1)} kg disponibles).`;
+      } else {
+        txt.style.color = 'var(--green)';
+        txt.innerText = `Se retirarán ${bls} bolsa(s) = ${kilosRetiro.toFixed(1)} kg. Saldo restante: ${saldoRestante.toFixed(1)} kg.`;
+      }
+    }
+
+    function confirmarCargaBolsasRack() {
+      if (!posicionRackSeleccionada) return;
+      const { codigoPos, fila, nivel, pos } = posicionRackSeleccionada;
+      const matNombre = document.getElementById('op-rack-material-select').value;
+      const lote = document.getElementById('op-rack-lote').value.trim().toUpperCase() || "LOTE-RACK";
+      const bls = parseInt(document.getElementById('op-rack-cant-bolsas').value) || 0;
+      const pBolsa = parseFloat(document.getElementById('op-rack-peso-bolsa').value) || 0;
+      const kilosSumar = bls * pBolsa;
+
+      if (bls <= 0 || pBolsa <= 0 || kilosSumar <= 0) {
+        alert("Ingresa valores válidos de bolsas y peso.");
+        return;
+      }
+
+      const matCat = obtenerMaterialPorNombre(matNombre);
+      let bultoPos = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
+
+      if (!bultoPos) {
+        bultoPos = {
+          id: crypto.randomUUID(),
+          serial: codigoPos,
+          codigoMaterial: matCat ? matCat.codigo : "COL",
+          nombreMaterial: matNombre,
+          kilos: kilosSumar,
+          kilosIniciales: kilosSumar,
+          bolsasPorPallet: bls,
+          pesoBolsa: pBolsa,
+          lote: lote,
+          filaBodega: fila,
+          nivelApilado: nivel,
+          posicionFila: pos,
+          fechaCreacion: new Date().toISOString(),
+          fechaIngresoBodega: new Date().toISOString(),
+          estado: "En Stock"
+        };
+        state.bultos.push(bultoPos);
+      } else {
+        bultoPos.kilos += kilosSumar;
+        bultoPos.nombreMaterial = matNombre;
+        bultoPos.codigoMaterial = matCat ? matCat.codigo : bultoPos.codigoMaterial;
+        bultoPos.lote = lote;
+        bultoPos.pesoBolsa = pBolsa;
+      }
 
       state.movimientos.unshift({
         id: crypto.randomUUID(),
         fecha: new Date().toISOString(),
-        serialBulto: "PLANO",
-        nombreMaterial: "Reordenamiento",
-        kilos: 0,
-        tipo: "COMPACTACIÓN DE POSICIONES",
-        detalle: "Se compactaron posiciones vacías en pasillos."
+        serialBulto: codigoPos,
+        nombreMaterial: matNombre,
+        kilos: kilosSumar,
+        tipo: "CARGA / REPOSICIÓN RACK",
+        detalle: `Se cargaron ${bls} bolsa(s) de ${pBolsa} kg (+${kilosSumar.toFixed(1)} kg) en ${codigoPos}. Saldo total: ${bultoPos.kilos.toFixed(1)} kg`
       });
 
       guardarTodo();
+      cerrarModal('modal-operar-posicion-rack');
       renderizarMapa();
-      alert("¡Pasillos compactados!");
+      renderizarBodega();
+      alert(`✅ Carga guardada exitosamente en ${codigoPos}: +${kilosSumar.toFixed(1)} kg.`);
     }
 
-    function verDetallePallet(serial) {
-      const b = state.bultos.find(x => x.serial === serial);
-      if (!b) return;
+    function confirmarRetiroBolsasRack() {
+      if (!posicionRackSeleccionada) return;
+      const { codigoPos, fila, nivel, pos } = posicionRackSeleccionada;
+      const bultoPos = state.bultos.find(b => b.filaBodega === fila && b.nivelApilado === nivel && b.posicionFila === pos && b.estado === 'En Stock');
 
-      const contEtiqueta = document.getElementById('render-etiqueta-detalle');
-      contEtiqueta.innerHTML = `
-        <div class="etiqueta-brother" style="width: 100%; margin: 0 0 10px 0;">
-          <h4>${b.nombreMaterial}</h4>
-          <p style="font-size: 0.7rem; font-weight: bold; color: #555;">CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
-          <svg id="svg-det-${b.serial}" style="width: 100%; height: 55px;"></svg>
-          <p style="font-family: monospace; font-weight: 900;">${b.serial}</p>
-        </div>
-      `;
-      JsBarcode(`#svg-det-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
-
-      const cfg = getConfigFila(b.filaBodega);
-      const usaFIFO = materialUsaFIFO(b.nombreMaterial);
-      const pBolsa = b.pesoBolsa || (obtenerMaterialPorNombre(b.nombreMaterial)?.pesoBolsaDefault) || 25;
-      const bls = Math.round(b.kilos / pBolsa);
-
-      document.getElementById('render-datos-detalle').innerHTML = `
-        <div class="card" style="margin: 0; font-size: 0.8rem;">
-          <p><b>Sector / Fila:</b> ${b.filaBodega} (${cfg.tipo})</p>
-          <p><b>Nivel:</b> Nivel ${b.nivelApilado} ${b.nivelApilado === 1 ? `(Piso - Código Fijo Slot ${b.subSlot === 1 ? 'A' : 'B'})` : '(Altura / Reserva Encargado)'}</p>
-          <p><b>Posición en Nivel:</b> Posición ${b.posicionFila}</p>
-          <p><b>Regla FIFO:</b> ${!usaFIFO ? 'Desactivado (Libre)' : (esPalletFIFOPrioritario(b.serial) ? '⭐ Prioritario para Despacho' : 'En Espera')}</p>
-          <hr style="margin: 6px 0; border-color: var(--border);">
-          <p><b>Composición:</b> Bolsas de ${pBolsa} kg (Saldo actual: ~${bls} bolsas)</p>
-          <p><b>Kilos Actuales:</b> ${b.kilos.toFixed(1)} kg</p>
-          <p><b>Ingreso Bodega:</b> ${new Date(b.fechaIngresoBodega || b.fechaCreacion).toLocaleString()}</p>
-        </div>
-      `;
-
-      const contAcciones = document.getElementById('render-acciones-rack-detalle');
-      if (cfg.tipo === "Rack") {
-        let btns = "";
-        if (b.nivelApilado > 1) {
-          btns += `<button class="btn btn-green" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'ABASTECER_N1')">⬇️ Bajar Bolsas Porcionado a Nivel 1 (Bolsas de ${pBolsa}kg)</button>`;
-        } else {
-          btns += `<button class="btn btn-green" style="width: 100%;" onclick="cerrarModal('modal-pallet-mapa'); abrirModalConsumoBolsasN1('${b.serial}');">📤 Retirar Bolsas para Producción (Picking)</button>`;
-        }
-        if (!b.esSlotFijoN1) {
-          btns += `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Nivel / Posición en Rack</button>`;
-        }
-        contAcciones.innerHTML = btns;
-      } else {
-        contAcciones.innerHTML = `<button class="btn btn-blue" style="width: 100%;" onclick="abrirModalUbicacionRack('${b.serial}', 'MOVER')">📍 Cambiar Ubicación</button>`;
+      if (!bultoPos || bultoPos.kilos <= 0) {
+        alert("La posición está vacía.");
+        return;
       }
 
+      const bls = parseInt(document.getElementById('op-rack-retirar-bolsas').value) || 0;
+      const pBolsa = bultoPos.pesoBolsa || 15;
+      const kilosRetiro = bls * pBolsa;
+
+      if (bls <= 0 || kilosRetiro <= 0 || kilosRetiro > bultoPos.kilos) {
+        alert("Cantidad no válida de bolsas a retirar.");
+        return;
+      }
+
+      bultoPos.kilos = Math.max(0, bultoPos.kilos - kilosRetiro);
+
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: codigoPos,
+        nombreMaterial: bultoPos.nombreMaterial,
+        kilos: kilosRetiro,
+        tipo: "RETIRO A PRODUCCIÓN",
+        detalle: `Retiro de ${bls} bolsa(s) (${kilosRetiro.toFixed(1)} kg) desde ${codigoPos}. Saldo restante: ${bultoPos.kilos.toFixed(1)} kg`
+      });
+
+      // Crear registro en Tránsito de Planta
+      state.contador++;
+      state.bultos.push({
+        id: crypto.randomUUID(),
+        serial: `PLT-${String(state.contador).padStart(5, '0')}`,
+        codigoMaterial: bultoPos.codigoMaterial,
+        nombreMaterial: bultoPos.nombreMaterial,
+        kilos: kilosRetiro,
+        kilosIniciales: kilosRetiro,
+        pesoBolsa: pBolsa,
+        lote: bultoPos.lote,
+        filaBodega: "Planta / Operación",
+        posicionFila: 1,
+        nivelApilado: 1,
+        fechaCreacion: new Date().toISOString(),
+        fechaIngresoBodega: new Date().toISOString(),
+        estado: "En Tránsito"
+      });
+
+      guardarTodo();
+      cerrarModal('modal-operar-posicion-rack');
+      renderizarMapa();
+      renderizarBodega();
+      renderizarProduccion();
+      alert(`📤 Retiro exitoso: ${bls} bolsa(s) enviadas a Planta. Saldo en ${codigoPos}: ${bultoPos.kilos.toFixed(1)} kg.`);
+    }
+
+    function imprimirEtiquetaPosicionRack() {
+      if (!posicionRackSeleccionada) return;
+      const { codigoPos } = posicionRackSeleccionada;
+      generarPDFEtiquetasRack([codigoPos]);
+    }
+
+    function imprimirCodigosRackFijosPDF() {
+      const codigos = [];
+      const todas = state.filasBodega.filter(f => f !== nombreFilaRetornados);
+      todas.forEach(f => {
+        const cfg = getConfigFila(f);
+        const niv = parseInt(cfg.niveles) || 3;
+        const pos = parseInt(cfg.posicionesPorNivel) || 4;
+        for (let n = 1; n <= niv; n++) {
+          for (let p = 1; p <= pos; p++) {
+            codigos.push(`${f.replace(/\s+/g, '')}-N${n}-P${p}`);
+          }
+        }
+      });
+      generarPDFEtiquetasRack(codigos);
+    }
+
+    function generarPDFEtiquetasRack(codigos) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [62, 50] });
+
+      codigos.forEach((cod, i) => {
+        if (i > 0) doc.addPage([62, 50], "portrait");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("POSICIÓN RACK", 31, 8, { align: "center" });
+
+        const canvas = document.createElement("canvas");
+        JsBarcode(canvas, cod, { format: "CODE128", displayValue: false, margin: 0 });
+        doc.addImage(canvas.toDataURL("image/png"), "PNG", 6, 12, 50, 20);
+
+        doc.setFont("courier", "bold");
+        doc.setFontSize(13);
+        doc.text(cod, 31, 40, { align: "center" });
+      });
+
+      doc.save(`Etiquetas_Rack_Fijas.pdf`);
+    }
+
+    // --- BODEGA Y ESCANEO ---
+    function setModoOperacion(modo) {
+      state.modoOperacion = modo;
+      const esEntrada = (modo === 'ENTRADA BODEGA');
+      document.getElementById('btn-modo-entrada').className = esEntrada ? 'btn btn-green' : 'btn btn-bordered';
+      document.getElementById('btn-modo-despacho').className = esEntrada ? 'btn btn-bordered' : 'btn btn-orange';
+
+      const banner = document.getElementById('banner-modo');
+      banner.style.background = esEntrada ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 149, 0, 0.15)';
+      banner.style.color = esEntrada ? 'var(--green)' : 'var(--orange)';
+      document.getElementById('banner-modo-titulo').innerText = esEntrada ? 'MODO ENTRADA ACTIVO' : 'MODO DESPACHO A BODEGA';
+      document.getElementById('banner-modo-sub').innerText = esEntrada ? 'Ingresa formalmente pallets a stock sellando su fecha FIFO.' : 'Despacha pallets completos o por bolsas a producción.';
+
+      document.getElementById('contenedor-fifo-listas').style.display = esEntrada ? 'none' : 'block';
+      if (!esEntrada) renderizarBodega();
+    }
+
+    function renderizarBodega() {
+      const cont = document.getElementById('contenedor-fifo-listas');
+      const componentes = obtenerListasFIFOPorComponente();
+
+      if (componentes.length === 0) {
+        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay componentes en stock.</small>`;
+      } else {
+        cont.innerHTML = componentes.map(g => `
+          <div class="card" style="border-left: 4px solid ${g.usaFIFO ? 'var(--orange)' : 'var(--blue)'};">
+            <div style="display: flex; justify-content: space-between;">
+              <div>
+                <strong>${g.nombreMaterial}</strong><br>
+                <small style="color: var(--secondary-text);">${g.codigoMaterial} • ${g.usaFIFO ? 'FIFO Activo' : 'FIFO Desactivado'}</small>
+              </div>
+              <div style="text-align: right;">
+                <b style="color: var(--blue); font-size: 0.85rem;">${g.palletsEnStock.length} unidades</b><br>
+                <small>${g.totalKilos.toFixed(0)} kg</small>
+              </div>
+            </div>
+
+            ${g.usaFIFO && g.palletPrioritario ? `
+              <div style="background: rgba(255, 149, 0, 0.1); border-radius: 6px; padding: 8px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <small style="color: var(--orange); font-weight: bold;">PRIORITARIO FIFO: ${g.palletPrioritario.serial}</small><br>
+                  <small>${g.palletPrioritario.filaBodega} • ${g.palletPrioritario.kilos.toFixed(0)} kg</small>
+                </div>
+                <button class="btn btn-orange" onclick="procesarEscaneoBodega('${g.palletPrioritario.serial}')">Despachar</button>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      const regCont = document.getElementById('lista-ultimos-registros');
+      regCont.innerHTML = state.movimientos.slice(0, 3).map(m => `
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 0.5px solid var(--border); padding: 4px 0;">
+          <div><b>${m.serialBulto} • ${m.nombreMaterial}</b><br><small style="color: var(--secondary-text);">${m.detalle}</small></div>
+          <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+        </div>
+      `).join('');
+    }
+
+    function procesarEscaneoBodega(serial) {
+      // Buscar bulto o posición
+      const bulto = state.bultos.find(b => b.serial === serial && b.estado === 'En Stock');
+
+      if (!bulto) {
+        // En V2 Colorantes, puede ser el código fijo de una posición
+        if (state.versionApp === "V2") {
+          const match = serial.match(/^(.+)-N(\d+)-P(\d+)$/);
+          if (match) {
+            abrirOperacionPosicionRack(serial, match[1], parseInt(match[2]), parseInt(match[3]));
+            return;
+          }
+        }
+        alert(`El código '${serial}' no existe o no está en stock.`);
+        return;
+      }
+
+      if (state.versionApp === "V2") {
+        abrirOperacionPosicionRack(bulto.serial, bulto.filaBodega, bulto.nivelApilado, bulto.posicionFila);
+        return;
+      }
+
+      // En V1 Materia Prima: Despacho tradicional a Producción
+      bulto.estado = "En Tránsito";
+      state.movimientos.unshift({
+        id: crypto.randomUUID(),
+        fecha: new Date().toISOString(),
+        serialBulto: bulto.serial,
+        nombreMaterial: bulto.nombreMaterial,
+        kilos: bulto.kilos,
+        tipo: "DESPACHO A PRODUCCIÓN",
+        detalle: `Salida de ${bulto.serial} (${bulto.kilos.toFixed(1)} kg) a Planta`
+      });
+
+      guardarTodo();
+      renderizarBodega();
+      alert(`Pallet ${serial} despachado a Producción.`);
+    }
+
+    function validarManual() {
+      const input = document.getElementById('serial-manual');
+      const val = input.value.trim().toUpperCase();
+      if (val) {
+        procesarEscaneoBodega(val);
+        input.value = "";
+      }
+    }
+
+    function verDetallePalletV1(serial) {
+      const b = state.bultos.find(x => x.serial === serial);
+      if (!b) return;
+      document.getElementById('render-datos-detalle').innerHTML = `
+        <div class="card">
+          <h4>${b.serial} - ${b.nombreMaterial}</h4>
+          <p>Kilos: ${b.kilos.toFixed(1)} kg</p>
+          <p>Fila: ${b.filaBodega} (Pos ${b.posicionFila})</p>
+          <p>Lote: ${b.lote}</p>
+        </div>
+      `;
       abrirModal('modal-pallet-mapa');
+    }
+
+    function compactarPosiciones() {
+      alert("Bodega compactada.");
+      renderizarMapa();
     }
 
     // --- PLANTA / PRODUCCIÓN ---
@@ -2102,155 +1305,46 @@
       const enPlanta = state.bultos.filter(b => b.estado === 'En Tránsito');
 
       if (enPlanta.length === 0) {
-        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay pallets o bolsas en tránsito de producción.</small>`;
+        cont.innerHTML = `<small style="color: var(--secondary-text);">No hay material en producción.</small>`;
       } else {
         cont.innerHTML = enPlanta.map(b => `
           <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <b>${b.serial}</b> ${b.ajustadoEnTurno ? '<span style="font-size: 0.65rem; background: rgba(0, 122, 255, 0.15); color: var(--blue); padding: 2px 4px; border-radius: 4px;">Ajustado</span>' : ''}<br>
+              <b>${b.serial}</b><br>
               <span style="font-size: 0.8rem;">${b.nombreMaterial}</span><br>
-              <small style="color: var(--secondary-text);">${b.tipoEmpaque || 'Pallet'} • Lote: ${b.lote} • Inicial: ${b.kilosIniciales.toFixed(0)} kg</small>
+              <small style="color: var(--secondary-text);">Lote: ${b.lote}</small>
             </div>
             <div style="text-align: right;">
-              <b style="color: ${b.kilos < b.kilosIniciales ? 'var(--orange)' : 'var(--purple)'};">${b.kilos.toFixed(1)} kg</b>
-              <div style="display: flex; gap: 4px; margin-top: 4px;">
-                <button class="btn btn-purple" style="font-size: 0.7rem; padding: 4px 6px;" onclick="abrirAjusteKilos('${b.serial}')">Pesar</button>
-                <button class="btn btn-red" style="font-size: 0.7rem; padding: 4px 6px;" onclick="abrirNoConforme('${b.serial}')">No Conforme</button>
-                <button class="btn btn-green" style="font-size: 0.7rem; padding: 4px 6px;" onclick="retornarABodega('${b.serial}')">A Bodega</button>
-              </div>
+              <b style="color: var(--purple);">${b.kilos.toFixed(1)} kg</b><br>
+              <button class="btn btn-red" style="font-size: 0.68rem; padding: 4px 6px; margin-top: 4px;" onclick="consumirBultoPlanta('${b.serial}')">Consumir</button>
             </div>
           </div>
         `).join('');
       }
     }
 
-    function abrirAjusteKilos(serial) {
+    function consumirBultoPlanta(serial) {
       const b = state.bultos.find(x => x.serial === serial);
       if (!b) return;
-      document.getElementById('ajuste-pallet-info').innerText = `${b.serial} - ${b.nombreMaterial} (Actual: ${b.kilos.toFixed(1)} kg)`;
-      document.getElementById('ajuste-nuevos-kilos').value = b.kilos;
-      document.getElementById('ajuste-nuevos-kilos').dataset.serial = b.serial;
-      abrirModal('modal-ajuste-kilos');
-    }
-
-    function confirmarAjusteKilos() {
-      const serial = document.getElementById('ajuste-nuevos-kilos').dataset.serial;
-      const bulto = state.bultos.find(x => x.serial === serial);
-      const nuevos = parseFloat(document.getElementById('ajuste-nuevos-kilos').value);
-      const motivo = document.getElementById('ajuste-motivo').value || "Consumo en producción";
-
-      if (isNaN(nuevos)) return;
-      const dif = nuevos - bulto.kilos;
-      if (dif !== 0) {
-        bulto.kilos = Math.max(0, nuevos);
-        bulto.ajustadoEnTurno = true;
-        if (bulto.kilos === 0 && !bulto.esSlotFijoN1) bulto.estado = "Consumido";
-
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: bulto.serial,
-          nombreMaterial: bulto.nombreMaterial,
-          kilos: Math.abs(dif),
-          tipo: "AJUSTE KILOS",
-          detalle: dif < 0 ? `Consumo registrado: ${Math.abs(dif).toFixed(1)} kg (${motivo}). Saldo real: ${bulto.kilos.toFixed(1)} kg` : `Ajuste positivo: +${dif.toFixed(1)} kg (${motivo}). Total: ${bulto.kilos.toFixed(1)} kg`
-        });
-        guardarTodo();
-        renderizarProduccion();
-      }
-      cerrarModal('modal-ajuste-kilos');
-    }
-
-    function abrirNoConforme(serial) {
-      const b = state.bultos.find(x => x.serial === serial);
-      if (!b) return;
-      document.getElementById('nc-pallet-info').innerText = `${b.serial} - ${b.nombreMaterial} (Saldo actual: ${b.kilos.toFixed(1)} kg)`;
-      document.getElementById('nc-kilos-descontar').value = "";
-      document.getElementById('nc-kilos-descontar').dataset.serial = b.serial;
-      abrirModal('modal-no-conforme');
-    }
-
-    function confirmarNoConforme() {
-      const serial = document.getElementById('nc-kilos-descontar').dataset.serial;
-      const bulto = state.bultos.find(x => x.serial === serial);
-      const descontar = parseFloat(document.getElementById('nc-kilos-descontar').value);
-      const motivo = document.getElementById('nc-motivo').value.trim() || "Contaminación / Desecho en producción";
-
-      if (!bulto || isNaN(descontar) || descontar <= 0) {
-        alert("Ingresa una cantidad válida de kilos a descontar.");
-        return;
-      }
-      if (descontar > bulto.kilos) {
-        alert(`No puedes descontar ${descontar.toFixed(1)} kg porque el pallet solo tiene ${bulto.kilos.toFixed(1)} kg.`);
-        return;
-      }
-
-      bulto.kilos = Math.max(0, bulto.kilos - descontar);
-      bulto.ajustadoEnTurno = true;
-      if (bulto.kilos === 0 && !bulto.esSlotFijoN1) bulto.estado = "Consumido";
-
+      b.estado = "Consumido";
       state.movimientos.unshift({
         id: crypto.randomUUID(),
         fecha: new Date().toISOString(),
-        serialBulto: bulto.serial,
-        nombreMaterial: bulto.nombreMaterial,
-        kilos: descontar,
-        tipo: "NO CONFORME (DESECHO)",
-        detalle: `Merma / No Conforme: -${descontar.toFixed(1)} kg (${motivo}). Saldo restante: ${bulto.kilos.toFixed(1)} kg`
+        serialBulto: b.serial,
+        nombreMaterial: b.nombreMaterial,
+        kilos: b.kilos,
+        tipo: "CONSUMO FINAL",
+        detalle: `Consumido totalmente en planta (-${b.kilos.toFixed(1)} kg)`
       });
-
       guardarTodo();
       renderizarProduccion();
-      cerrarModal('modal-no-conforme');
-    }
-
-    function retornarABodega(serial) {
-      const bulto = state.bultos.find(x => x.serial === serial);
-      bulto.estado = "En Stock";
-      bulto.ajustadoEnTurno = false;
-      bulto.filaBodega = nombreFilaRetornados;
-      bulto.fechaIngresoBodega = new Date().toISOString();
-
-      const enRet = state.bultos.filter(b => b.filaBodega === nombreFilaRetornados && b.estado === 'En Stock' && b.id !== bulto.id);
-      const cant = enRet.length;
-
-      bulto.posicionFila = Math.floor(cant / 2) + 1;
-      bulto.nivelApilado = (cant % 2 === 0) ? 1 : 2;
-
-      state.movimientos.unshift({
-        id: crypto.randomUUID(),
-        fecha: new Date().toISOString(),
-        serialBulto: bulto.serial,
-        nombreMaterial: bulto.nombreMaterial,
-        kilos: bulto.kilos,
-        tipo: "RETORNO A BODEGA",
-        detalle: `Retornado a [${nombreFilaRetornados}] (Pos ${bulto.posicionFila}-N${bulto.nivelApilado}) (+ ${bulto.kilos.toFixed(1)} kg)`
-      });
-
-      guardarTodo();
-      renderizarProduccion();
-      alert(`Pallet ${serial} retornado a sector Retornados de Bodega.`);
     }
 
     function consumirRestantes() {
-      if (!confirm("¿Consumir todo lo no pistoleado? Los pallets en tránsito se darán por consumidos en su totalidad.")) return;
-      const noPistoleados = state.bultos.filter(b => b.estado === 'En Tránsito' && !b.ajustadoEnTurno);
-
-      noPistoleados.forEach(b => {
-        const k = b.kilos;
-        b.kilos = 0;
+      if (!confirm("¿Consumir todo lo que está en planta?")) return;
+      state.bultos.filter(b => b.estado === 'En Tránsito').forEach(b => {
         b.estado = "Consumido";
-        state.movimientos.unshift({
-          id: crypto.randomUUID(),
-          fecha: new Date().toISOString(),
-          serialBulto: b.serial,
-          nombreMaterial: b.nombreMaterial,
-          kilos: k,
-          tipo: "CONSUMO FINAL",
-          detalle: `Consumo total por cierre de turno (- ${k.toFixed(1)} kg)`
-        });
       });
-
       guardarTodo();
       renderizarProduccion();
     }
@@ -2258,165 +1352,65 @@
     // --- INVENTARIO GENERAL ---
     function renderizarInventario() {
       const filtro = document.getElementById('inv-filtro-estado').value;
-      const criterio = document.getElementById('inv-agrupar').value;
       const cont = document.getElementById('lista-inventario-agrupado');
-
       const filtrados = (filtro === "Todos") ? state.bultos : state.bultos.filter(b => b.estado === filtro);
-      const agrupados = {};
 
-      filtrados.forEach(b => {
-        let clave = b.nombreMaterial;
-        if (criterio === "Por Fila") clave = b.filaBodega;
-        if (criterio === "Por Lote") clave = `Lote: ${b.lote}`;
-        if (criterio === "Por Estado") clave = b.estado;
-
-        if (!agrupados[clave]) agrupados[clave] = [];
-        agrupados[clave].push(b);
-      });
-
-      cont.innerHTML = Object.keys(agrupados).sort().map(clave => {
-        const lista = agrupados[clave];
-        const totKilos = lista.reduce((a, b) => a + b.kilos, 0);
-
-        return `
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 6px;">
-              <b>${clave}</b>
-              <b style="color: var(--blue); font-size: 0.85rem;">${totKilos.toFixed(1)} kg</b>
-            </div>
-            ${lista.map(b => `
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 4px 0;">
-                <div>
-                  <b>${b.serial}</b> <span style="font-size: 0.7rem; color: var(--secondary-text);">(${b.filaBodega} N${b.nivelApilado}-P${b.posicionFila})</span><br>
-                  <small>${b.nombreMaterial} • Lote: ${b.lote} • ${b.tipoEmpaque || ''}</small>
-                </div>
-                <b>${b.kilos.toFixed(1)} kg</b>
-              </div>
-            `).join('')}
+      cont.innerHTML = filtrados.map(b => `
+        <div class="card" style="display: flex; justify-content: space-between; padding: 8px 12px;">
+          <div>
+            <b>${b.serial}</b> - ${b.nombreMaterial}<br>
+            <small style="color: var(--secondary-text);">${b.filaBodega} • Lote: ${b.lote} • Estado: ${b.estado}</small>
           </div>
-        `;
-      }).join('');
-    }
-
-    function borrarCreadosNoEscaneados() {
-      const cant = state.bultos.filter(b => b.estado === 'Creado').length;
-      if (cant === 0) { alert("No hay bultos creados pendientes de ingresar."); return; }
-      if (confirm(`¿Borrar definitivamente ${cant} bultos creados que nunca ingresaron a bodega?`)) {
-        state.bultos = state.bultos.filter(b => b.estado !== 'Creado');
-        guardarTodo();
-        renderizarInventario();
-      }
-    }
-
-    // --- AUDITORÍA DE FLUJOS ---
-    function renderizarAuditoria() {
-      const cont = document.getElementById('lista-auditoria-agrupada');
-      const agrupados = {};
-
-      state.movimientos.forEach(m => {
-        const fechaCorta = new Date(m.fecha).toLocaleDateString();
-        if (!agrupados[fechaCorta]) agrupados[fechaCorta] = [];
-        agrupados[fechaCorta].push(m);
-      });
-
-      cont.innerHTML = Object.keys(agrupados).map(fecha => `
-        <div class="card">
-          <strong style="font-size: 0.9rem; border-bottom: 1px solid var(--border); display: block; padding-bottom: 4px; margin-bottom: 6px;">${fecha}</strong>
-          ${agrupados[fecha].map(m => `
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 0.5px solid var(--border);">
-              <div>
-                <b>${m.serialBulto} -${m.nombreMaterial}</b><br>
-                <small style="color: var(--secondary-text);">${m.detalle}</small>
-              </div>
-              <div style="text-align: right;">
-                <b>${m.kilos > 0 ? m.kilos.toFixed(1) + ' kg' : ''}</b><br>
-                <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
-              </div>
-            </div>
-          `).join('')}
+          <b>${b.kilos.toFixed(1)} kg</b>
         </div>
       `).join('');
     }
 
-    // --- GESTIÓN DE FILAS Y CATÁLOGO ---
+    function borrarCreadosNoEscaneados() {
+      state.bultos = state.bultos.filter(b => b.estado !== 'Creado');
+      guardarTodo();
+      renderizarInventario();
+    }
+
+    // --- AUDITORÍA ---
+    function renderizarAuditoria() {
+      const cont = document.getElementById('lista-auditoria-agrupada');
+      cont.innerHTML = state.movimientos.map(m => `
+        <div class="card" style="padding: 8px 12px; margin-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between;">
+            <b>${m.tipo}</b>
+            <small style="color: var(--secondary-text);">${new Date(m.fecha).toLocaleString()}</small>
+          </div>
+          <p style="font-size: 0.8rem; margin-top: 4px;">${m.serialBulto} • ${m.nombreMaterial}: ${m.detalle}</p>
+        </div>
+      `).join('');
+    }
+
+    // --- CONFIGURACIÓN FILAS Y CATÁLOGO ---
     function toggleOpcionesRackNuevaFila() {
       const tipo = document.getElementById('nueva-fila-tipo').value;
       document.getElementById('opciones-nueva-fila-rack').style.display = (tipo === 'Rack') ? 'flex' : 'none';
     }
 
-    function cambiarTipoFilaExistente(nombreFila) {
-      const cfg = getConfigFila(nombreFila);
-      if (cfg.tipo === 'Piso') {
-        const niv = parseInt(prompt(`Configurar '${nombreFila}' como RACK.\n¿Cuántos niveles de altura tiene? (Nivel 1 = A piso con 2 códigos/pos):`, cfg.niveles || 3));
-        if (isNaN(niv) || niv < 1) return;
-        const pos = parseInt(prompt(`¿Cuántos pallets caben uno al lado del otro por cada nivel en '${nombreFila}'?:`, cfg.posicionesPorNivel || 4));
-        if (isNaN(pos) || pos < 1) return;
-        cfg.tipo = 'Rack';
-        cfg.niveles = niv;
-        cfg.posicionesPorNivel = pos;
-      } else {
-        cfg.tipo = 'Piso';
-        cfg.niveles = 2;
-      }
-      guardarTodo();
-      poblarSelectores();
-      renderizarGestionFilas();
-      renderizarMapa();
-    }
-
-    function toggleFIFOMaterialRapido(id) {
-      const m = state.catalogo.find(x => x.id === id);
-      if (!m) return;
-      m.usaFIFO = (m.usaFIFO === false) ? true : false;
-      guardarTodo();
-      poblarSelectores();
-      renderizarGestionFilas();
-      renderizarBodega();
-    }
-
     function renderizarGestionFilas() {
       const cont = document.getElementById('lista-filas-gestion');
-      cont.innerHTML = state.filasBodega.map((f, i) => {
-        const count = state.bultos.filter(b => b.filaBodega === f && b.estado === 'En Stock' && b.kilos > 0).length;
+      cont.innerHTML = state.filasBodega.map(f => {
         const cfg = getConfigFila(f);
         return `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
-            <div>
-              ${modoEdicionFilas ? `<button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, -1)">▲</button> <button class="btn btn-bordered" style="padding: 2px 6px;" onclick="moverFila(${i}, 1)">▼</button>` : ''}
-              <b>${f}</b>
-              <span style="font-size: 0.68rem; background: ${cfg.tipo === 'Rack' ? 'rgba(0,122,255,0.15)' : 'var(--btn-bordered-bg)'}; color: ${cfg.tipo === 'Rack' ? 'var(--blue)' : 'var(--text)'}; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">
-                ${cfg.tipo === 'Rack' ? `Rack (${cfg.niveles}N x ${cfg.posicionesPorNivel}P)` : 'Piso (2 Niv)'}
-              </span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <small style="color: var(--secondary-text); margin-right: 4px;">${count} cód</small>
-              <button class="btn btn-bordered" style="font-size: 0.68rem; padding: 3px 6px;" onclick="cambiarTipoFilaExistente('${f}')">${cfg.tipo === 'Rack' ? 'A Piso' : 'A Rack'}</button>
-              <button class="btn btn-red" style="font-size: 0.7rem; padding: 3px 6px;" onclick="eliminarFila('${f}')">✕</button>
-            </div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+            <span><b>${f}</b> (${cfg.tipo} - ${cfg.niveles || 2}N x ${cfg.posicionesPorNivel || 4}P)</span>
+            <button class="btn btn-red" style="padding: 2px 6px; font-size: 0.7rem;" onclick="eliminarFila('${f}')">✕</button>
           </div>
         `;
       }).join('');
 
       const catCont = document.getElementById('lista-catalogo-gestion');
-      catCont.innerHTML = state.catalogo.map(c => {
-        const fifoOn = c.usaFIFO !== false;
-        const bls = c.bolsasPorPallet || 1;
-        const pBolsa = c.pesoBolsaDefault || c.pesoDefault;
-        return `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 0.85rem;">
-            <div>
-              <b>${c.nombre}</b><br>
-              <small style="color: var(--secondary-text);">Cód: ${c.codigo} • ${bls} bls x ${pBolsa}kg = ${c.pesoDefault} kg (${c.tipoEmpaque})</small>
-            </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
-              <button class="btn ${fifoOn ? 'btn-orange' : 'btn-bordered'}" style="font-size: 0.68rem; padding: 4px 8px;" onclick="toggleFIFOMaterialRapido('${c.id}')">
-                ${fifoOn ? 'FIFO: ON' : 'FIFO: OFF'}
-              </button>
-              <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
-            </div>
-          </div>
-        `;
-      }).join('');
+      catCont.innerHTML = state.catalogo.map(c => `
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border);">
+          <div><b>${c.nombre}</b><br><small style="color: var(--secondary-text);">${c.codigo} • ${c.pesoDefault} kg</small></div>
+          <button class="btn btn-bordered" style="font-size: 0.7rem;" onclick="abrirModalMaterial('${c.id}')">Editar</button>
+        </div>
+      `).join('');
     }
 
     function toggleModoEditarFilas() {
@@ -2425,119 +1419,71 @@
     }
 
     function agregarFila() {
-      const input = document.getElementById('nueva-fila-nombre');
-      const nombre = input.value.trim();
+      const nombre = document.getElementById('nueva-fila-nombre').value.trim();
       const tipo = document.getElementById('nueva-fila-tipo').value;
       const niveles = parseInt(document.getElementById('nueva-fila-niveles').value) || 3;
       const posiciones = parseInt(document.getElementById('nueva-fila-posiciones').value) || 4;
 
       if (!nombre) return;
-      if (nombre.toLowerCase() === nombreFilaRetornados.toLowerCase()) { alert(`El nombre '${nombreFilaRetornados}' está reservado.`); return; }
       if (!state.filasBodega.includes(nombre)) {
         state.filasBodega.push(nombre);
-        if (!state.configFilas) state.configFilas = {};
-        state.configFilas[nombre] = {
-          tipo: tipo,
-          niveles: tipo === 'Rack' ? Math.max(1, niveles) : 2,
-          posicionesPorNivel: tipo === 'Rack' ? Math.max(1, posiciones) : 4
-        };
+        state.configFilas[nombre] = { tipo, niveles, posicionesPorNivel: posiciones };
         guardarTodo();
         poblarSelectores();
         renderizarGestionFilas();
-        input.value = "";
-      } else {
-        alert("Esta fila ya existe.");
+        document.getElementById('nueva-fila-nombre').value = "";
       }
     }
 
     function eliminarFila(nombre) {
-      const count = state.bultos.filter(b => b.filaBodega === nombre && b.estado === 'En Stock' && b.kilos > 0).length;
-      if (count > 0) { alert(`No se puede eliminar '${nombre}' porque contiene ${count} pallets en stock.`); return; }
       state.filasBodega = state.filasBodega.filter(f => f !== nombre);
-      if (state.configFilas && state.configFilas[nombre]) delete state.configFilas[nombre];
+      delete state.configFilas[nombre];
       guardarTodo();
       poblarSelectores();
       renderizarGestionFilas();
     }
 
-    function moverFila(idx, dir) {
-      const nuevo = idx + dir;
-      if (nuevo >= 0 && nuevo < state.filasBodega.length) {
-        const temp = state.filasBodega[idx];
-        state.filasBodega[idx] = state.filasBodega[nuevo];
-        state.filasBodega[nuevo] = temp;
-        guardarTodo();
-        renderizarGestionFilas();
+    // --- CATÁLOGO ---
+    function abrirModalMaterial(id) {
+      document.getElementById('editor-mat-id').value = id || "";
+      if (id) {
+        const m = state.catalogo.find(x => x.id === id);
+        document.getElementById('editor-mat-codigo').value = m.codigo;
+        document.getElementById('editor-mat-nombre').value = m.nombre;
+        document.getElementById('editor-mat-peso').value = m.pesoDefault;
+        document.getElementById('editor-mat-bolsas').value = m.bolsasPorPallet || 25;
+        document.getElementById('editor-mat-peso-bolsa').value = m.pesoBolsaDefault || 15;
+      } else {
+        document.getElementById('editor-mat-codigo').value = "";
+        document.getElementById('editor-mat-nombre').value = "";
+        document.getElementById('editor-mat-peso').value = 375;
+        document.getElementById('editor-mat-bolsas').value = 25;
+        document.getElementById('editor-mat-peso-bolsa').value = 15;
       }
+      abrirModal('modal-editor-material');
     }
 
     function calcularPesoDesdeBolsasEditor() {
       const b = parseFloat(document.getElementById('editor-mat-bolsas').value) || 0;
       const pb = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 0;
-      if (b > 0 && pb > 0) {
-        document.getElementById('editor-mat-peso').value = (b * pb).toFixed(1);
-      }
-    }
-
-    function abrirModalMaterial(id) {
-      document.getElementById('editor-mat-id').value = id || "";
-      if (id) {
-        const m = state.catalogo.find(x => x.id === id);
-        document.getElementById('editor-mat-titulo').innerText = "Modificar Material";
-        document.getElementById('editor-mat-codigo').value = m.codigo;
-        document.getElementById('editor-mat-nombre').value = m.nombre;
-        document.getElementById('editor-mat-bolsas').value = m.bolsasPorPallet || 1;
-        document.getElementById('editor-mat-peso-bolsa').value = m.pesoBolsaDefault || m.pesoDefault;
-        document.getElementById('editor-mat-peso').value = m.pesoDefault;
-        document.getElementById('editor-mat-empaque').value = m.tipoEmpaque;
-        document.getElementById('editor-mat-fifo').value = (m.usaFIFO !== false) ? "true" : "false";
-        document.getElementById('btn-eliminar-material').style.display = "block";
-      } else {
-        document.getElementById('editor-mat-titulo').innerText = "Nuevo Material";
-        document.getElementById('editor-mat-codigo').value = "";
-        document.getElementById('editor-mat-nombre').value = "";
-        document.getElementById('editor-mat-bolsas').value = 25;
-        document.getElementById('editor-mat-peso-bolsa').value = 15;
-        document.getElementById('editor-mat-peso').value = 375;
-        document.getElementById('editor-mat-empaque').value = "Bolsas en Pallet";
-        document.getElementById('editor-mat-fifo').value = "true";
-        document.getElementById('btn-eliminar-material').style.display = "none";
-      }
-      abrirModal('modal-editor-material');
+      document.getElementById('editor-mat-peso').value = (b * pb).toFixed(1);
     }
 
     function guardarMaterialCatalogo() {
       const id = document.getElementById('editor-mat-id').value;
       const codigo = document.getElementById('editor-mat-codigo').value.trim().toUpperCase();
       const nombre = document.getElementById('editor-mat-nombre').value.trim();
-      const bolsasPorPallet = parseInt(document.getElementById('editor-mat-bolsas').value) || 1;
-      const pesoBolsaDefault = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 25;
-      const peso = parseFloat(document.getElementById('editor-mat-peso').value) || (bolsasPorPallet * pesoBolsaDefault);
-      const empaque = document.getElementById('editor-mat-empaque').value;
-      const usaFIFO = document.getElementById('editor-mat-fifo').value === "true";
+      const peso = parseFloat(document.getElementById('editor-mat-peso').value) || 0;
+      const bls = parseInt(document.getElementById('editor-mat-bolsas').value) || 25;
+      const pb = parseFloat(document.getElementById('editor-mat-peso-bolsa').value) || 15;
 
-      if (!codigo || !nombre || isNaN(peso)) return;
+      if (!codigo || !nombre) return;
 
       if (id) {
         const m = state.catalogo.find(x => x.id === id);
-        m.codigo = codigo;
-        m.nombre = nombre;
-        m.pesoDefault = peso;
-        m.bolsasPorPallet = bolsasPorPallet;
-        m.pesoBolsaDefault = pesoBolsaDefault;
-        m.tipoEmpaque = empaque;
-        m.usaFIFO = usaFIFO;
+        m.codigo = codigo; m.nombre = nombre; m.pesoDefault = peso; m.bolsasPorPallet = bls; m.pesoBolsaDefault = pb;
       } else {
-        state.catalogo.push({
-          id: crypto.randomUUID(),
-          codigo,
-          nombre,
-          pesoDefault: peso,
-          bolsasPorPallet,
-          pesoBolsaDefault,
-          tipoEmpaque: empaque,
-          usaFIFO
-        });
+        state.catalogo.push({ id: crypto.randomUUID(), codigo, nombre, pesoDefault: peso, bolsasPorPallet: bls, pesoBolsaDefault: pb, usaFIFO: true });
       }
       guardarTodo();
       poblarSelectores();
@@ -2547,195 +1493,168 @@
 
     function eliminarMaterialCatalogo() {
       const id = document.getElementById('editor-mat-id').value;
-      if (confirm("¿Eliminar este material del catálogo?")) {
-        state.catalogo = state.catalogo.filter(x => x.id !== id);
-        guardarTodo();
-        poblarSelectores();
-        renderizarGestionFilas();
-        cerrarModal('modal-editor-material');
-      }
+      state.catalogo = state.catalogo.filter(x => x.id !== id);
+      guardarTodo();
+      poblarSelectores();
+      renderizarGestionFilas();
+      cerrarModal('modal-editor-material');
     }
 
-    // --- CARGA MASIVA DE CATÁLOGO DESDE EXCEL (.XLSX / .XLS / .CSV) ---
+    // --- CARGA EXCEL ---
     function descargarPlantillaCatalogoExcel() {
-      if (typeof XLSX === 'undefined') {
-        alert("La librería de Excel aún se está cargando. Revisa tu conexión e inténtalo de nuevo.");
-        return;
-      }
-      const datosEjemplo = [
-        {
-          Codigo: "RMGE00007",
-          Nombre: "Material - PA6 - Genérico - AZOTY",
-          BolsasPorPallet: 1,
-          PesoPorBolsa: 1200,
-          PesoTotal: 1200,
-          TipoEmpaque: "Pallet",
-          FIFO: "SI"
-        },
-        {
-          Codigo: "RMGE00012",
-          Nombre: "Material - PA6 - 1030MB",
-          BolsasPorPallet: 30,
-          PesoPorBolsa: 25,
-          PesoTotal: 750,
-          TipoEmpaque: "Bolsas en Pallet",
-          FIFO: "NO"
-        },
-        {
-          Codigo: "COL00045",
-          Nombre: "Colorante Negro Masterbatch",
-          BolsasPorPallet: 25,
-          PesoPorBolsa: 15,
-          PesoTotal: 375,
-          TipoEmpaque: "Bolsas en Pallet",
-          FIFO: "NO"
-        }
-      ];
-
-      const ws = XLSX.utils.json_to_sheet(datosEjemplo);
+      const datos = [{ Codigo: "COL001", Nombre: "Colorante Azul", BolsasPorPallet: 25, PesoPorBolsa: 15, PesoTotal: 375 }];
+      const ws = XLSX.utils.json_to_sheet(datos);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Catalogo");
-      XLSX.writeFile(wb, "Plantilla_Catalogo_Materiales.xlsx");
+      XLSX.writeFile(wb, "Plantilla_Catalogo.xlsx");
     }
 
     function importarCatalogoExcel(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const filas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-          if (!filas || filas.length === 0) {
-            alert("El archivo Excel está vacío o no tiene filas válidas.");
-            event.target.value = "";
-            return;
-          }
-
-          let agregados = 0;
-          let actualizados = 0;
-
-          filas.forEach(row => {
-            const norm = {};
-            Object.keys(row).forEach(k => {
-              const cleanKey = k.trim().toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9]/g, "");
-              norm[cleanKey] = row[k];
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        filas.forEach(r => {
+          const cod = String(r.Codigo || r.codigo || "").trim().toUpperCase();
+          const nom = String(r.Nombre || r.nombre || "").trim();
+          if (cod && nom) {
+            state.catalogo.push({
+              id: crypto.randomUUID(),
+              codigo: cod,
+              nombre: nom,
+              pesoDefault: parseFloat(r.PesoTotal || 375),
+              bolsasPorPallet: parseInt(r.BolsasPorPallet || 25),
+              pesoBolsaDefault: parseFloat(r.PesoPorBolsa || 15),
+              usaFIFO: true
             });
-
-            const codigo = String(norm.codigo || norm.cod || norm.codigomaterial || "").trim().toUpperCase();
-            const nombre = String(norm.nombre || norm.descripcion || norm.material || norm.nombrematerial || "").trim();
-
-            if (!codigo || !nombre) return;
-
-            const bolsasPorPallet = Math.max(1, parseInt(norm.bolsasporpallet || norm.bolsas || norm.cantidadbolsas || norm.bultos || 1) || 1);
-            const pesoBolsaDefault = parseFloat(norm.pesoporbolsa || norm.pesobolsa || norm.kilosbolsa || 0) || 0;
-            let pesoTotal = parseFloat(norm.pesototal || norm.peso || norm.pesodefault || norm.kilos || 0) || 0;
-
-            if (pesoTotal <= 0 && pesoBolsaDefault > 0) {
-              pesoTotal = bolsasPorPallet * pesoBolsaDefault;
-            }
-            const pesoBolsaFinal = pesoBolsaDefault > 0 ? pesoBolsaDefault : (pesoTotal > 0 ? (pesoTotal / bolsasPorPallet) : 25);
-            const pesoTotalFinal = pesoTotal > 0 ? pesoTotal : (bolsasPorPallet * pesoBolsaFinal);
-
-            const tipoEmpaque = String(norm.tipoempaque || norm.empaque || (bolsasPorPallet > 1 ? "Bolsas en Pallet" : "Pallet")).trim() || "Pallet";
-
-            const fifoRaw = String(norm.fifo || norm.usafifo || norm.controlfifo || "SI").trim().toUpperCase();
-            const usaFIFO = !(fifoRaw === "NO" || fifoRaw === "FALSE" || fifoRaw === "0" || fifoRaw === "OFF" || fifoRaw === "DESACTIVADO");
-
-            const existente = state.catalogo.find(c => c.codigo.toUpperCase() === codigo && c.nombre.toLowerCase() === nombre.toLowerCase());
-
-            if (existente) {
-              existente.pesoDefault = pesoTotalFinal;
-              existente.bolsasPorPallet = bolsasPorPallet;
-              existente.pesoBolsaDefault = pesoBolsaFinal;
-              existente.tipoEmpaque = tipoEmpaque;
-              existente.usaFIFO = usaFIFO;
-              actualizados++;
-            } else {
-              state.catalogo.push({
-                id: crypto.randomUUID(),
-                codigo: codigo,
-                nombre: nombre,
-                pesoDefault: pesoTotalFinal,
-                bolsasPorPallet: bolsasPorPallet,
-                pesoBolsaDefault: pesoBolsaFinal,
-                tipoEmpaque: tipoEmpaque,
-                usaFIFO: usaFIFO
-              });
-              agregados++;
-            }
-          });
-
-          guardarTodo();
-          poblarSelectores();
-          renderizarGestionFilas();
-          alert(`✅ Carga masiva de Excel completada:\n• Nuevos agregados: ${agregados}\n• Actualizados: ${actualizados}\n• Total en catálogo: ${state.catalogo.length}`);
-        } catch (err) {
-          console.error(err);
-          alert("Error al leer el archivo Excel. Verifica que sea un archivo .xlsx, .xls o .csv válido.");
-        }
-        event.target.value = "";
+          }
+        });
+        guardarTodo();
+        poblarSelectores();
+        renderizarGestionFilas();
+        alert("Catálogo cargado desde Excel.");
       };
       reader.readAsArrayBuffer(file);
     }
 
-    // --- CÁMARA NATIVA HTML5 QRCODE ---
+    function descargarPlantillaRecepcionExcel() {
+      const datos = [{ Codigo: "RMGE00007", Nombre: "Material PA6", Lote: "LOT-01", Fila: "Fila 1", CantidadPallets: 10, PesoTotalPallet: 1200 }];
+      const ws = XLSX.utils.json_to_sheet(datos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Recepcion");
+      XLSX.writeFile(wb, "Plantilla_Recepcion.xlsx");
+    }
+
+    function importarRecepcionExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        const nuevos = [];
+        filas.forEach(r => {
+          const cod = String(r.Codigo || "").trim().toUpperCase();
+          const nom = String(r.Nombre || "").trim();
+          const lote = String(r.Lote || "LOTE").trim().toUpperCase();
+          const fila = String(r.Fila || "Fila 1").trim();
+          const cant = parseInt(r.CantidadPallets || 1);
+          const peso = parseFloat(r.PesoTotalPallet || 1200);
+
+          for (let i = 0; i < cant; i++) {
+            state.contador++;
+            const b = {
+              id: crypto.randomUUID(),
+              serial: `BTO-${String(state.contador).padStart(5, '0')}`,
+              codigoMaterial: cod,
+              nombreMaterial: nom,
+              kilos: peso,
+              kilosIniciales: peso,
+              lote: lote,
+              filaBodega: fila,
+              posicionFila: 1,
+              nivelApilado: 1,
+              fechaCreacion: new Date().toISOString(),
+              fechaIngresoBodega: null,
+              estado: "Creado"
+            };
+            state.bultos.push(b);
+            nuevos.push(b);
+          }
+        });
+        guardarTodo();
+        ultimoLoteGenerado = nuevos;
+        renderizarEtiquetasBrother(nuevos);
+        alert(`Recepcionados ${nuevos.length} pallets.`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderizarEtiquetasBrother(pallets) {
+      const cont = document.getElementById('contenedor-etiquetas-brother');
+      cont.innerHTML = pallets.map(b => `
+        <div class="etiqueta-brother">
+          <h4>${b.nombreMaterial}</h4>
+          <p>CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}</p>
+          <svg id="svg-${b.serial}" style="width: 100%; height: 60px; margin: 4px 0;"></svg>
+          <p style="font-family: monospace; font-size: 1.1rem; font-weight: 900;">${b.serial}</p>
+          <div style="border-top: 1px solid black; padding-top: 4px;"><b>${b.kilos.toFixed(1)} kg</b></div>
+        </div>
+      `).join('');
+
+      pallets.forEach(b => {
+        JsBarcode(`#svg-${b.serial}`, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
+      });
+      abrirModal('modal-etiquetas');
+    }
+
+    function descargarLotePDF() {
+      if (!ultimoLoteGenerado.length) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [62, 100] });
+
+      ultimoLoteGenerado.forEach((b, i) => {
+        if (i > 0) doc.addPage([62, 100], "portrait");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(b.nombreMaterial, 31, 8, { align: "center" });
+        doc.setFontSize(6.5);
+        doc.text(`CÓD: ${b.codigoMaterial} | LOTE: ${b.lote} | ${b.filaBodega}`, 31, 20, { align: "center" });
+
+        const canvas = document.createElement("canvas");
+        JsBarcode(canvas, b.serial, { format: "CODE128", displayValue: false, margin: 0 });
+        doc.addImage(canvas.toDataURL("image/png"), "PNG", 6, 26, 50, 24);
+
+        doc.setFont("courier", "bold");
+        doc.setFontSize(11);
+        doc.text(b.serial, 31, 56, { align: "center" });
+        doc.setFontSize(13);
+        doc.text(`${b.kilos.toFixed(1)} kg`, 31, 75, { align: "center" });
+      });
+      doc.save("Etiquetas_62mm.pdf");
+    }
+
+    // --- CÁMARA HTML5 ---
     function abrirCamara(objetivo) {
       palletObjetivoFIFO = objetivo;
-      const label = document.getElementById('scanner-objetivo-msg');
-      label.innerText = objetivo ? `DEBES VALIDAR ESCANEANDO: ${objetivo}` : "";
       abrirModal('modal-scanner');
-
       scannerActivo = new Html5Qrcode("reader");
       scannerActivo.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 240 },
         code => {
           cerrarScanner();
-          const serial = code.trim().toUpperCase();
-          if (palletObjetivoFIFO && serial !== palletObjetivoFIFO) {
-            alert(`Código incorrecto. Escaneaste '${serial}', pero debes validar '${palletObjetivoFIFO}'.`);
-            return;
-          }
-          procesarEscaneoBodega(serial);
+          procesarEscaneoBodega(code.trim().toUpperCase());
         }
-      ).catch(err => {
-        alert("Error de cámara: " + err);
-        cerrarScanner();
-      });
+      ).catch(() => cerrarScanner());
     }
 
     function abrirCamaraPlanta() {
-      abrirModal('modal-scanner');
-      document.getElementById('scanner-objetivo-msg').innerText = "Escanear Pallet en Planta";
-
-      scannerActivo = new Html5Qrcode("reader");
-      scannerActivo.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 240 },
-        code => {
-          cerrarScanner();
-          const serial = code.trim().toUpperCase();
-          const b = state.bultos.find(x => x.serial === serial);
-          if (!b) { alert(`El código '${serial}' no existe.`); return; }
-          if (b.estado !== 'En Tránsito') { alert(`El bulto ${b.serial} no se encuentra en Producción.`); return; }
-          abrirAjusteKilos(serial);
-        }
-      ).catch(err => {
-        alert("Error de cámara: " + err);
-        cerrarScanner();
-      });
-    }
-
-    function iniciarValidacionSalida(serial, fila, mat) {
-      abrirCamara(serial);
+      abrirCamara(null);
     }
 
     function cerrarScanner() {
@@ -2749,22 +1668,20 @@
       }
     }
 
-    // --- MODALES AUXILIARES ---
     function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
     function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
 
-    // --- EXPORTACIÓN CSV (CON BOM UTF-8 PARA EXCEL) / JSON ---
     function exportarCSV() {
-      let csv = "\uFEFFID;Fecha;Serial;Material;Kilos;Tipo Movimiento;Detalle\n";
+      let csv = "\uFEFFID;Fecha;Serial;Material;Kilos;Tipo;Detalle\n";
       state.movimientos.forEach(m => {
         csv += `${m.id};${m.fecha};${m.serialBulto};${m.nombreMaterial};${m.kilos};${m.tipo};\"${m.detalle}\"\n`;
       });
-      descargarArchivo(csv, "Kardex_Movimientos_Planta.csv", "text/csv;charset=utf-8;");
+      descargarArchivo(csv, `Kardex_${state.versionApp}.csv`, "text/csv;charset=utf-8;");
     }
 
     function exportarJSON() {
       guardarTodo();
-      descargarArchivo(JSON.stringify(state, null, 2), "Respaldo_ControlFlujos.json", "application/json");
+      descargarArchivo(JSON.stringify(state, null, 2), `Respaldo_${state.versionApp}.json`, "application/json");
     }
 
     function importarJSON(e) {
@@ -2774,30 +1691,10 @@
       reader.onload = function(evt) {
         try {
           state = JSON.parse(evt.target.result);
-          if (!state.configFilas) state.configFilas = {};
-          if (state.catalogo) {
-            state.catalogo.forEach(c => {
-              if (c.usaFIFO === undefined) c.usaFIFO = true;
-              if (!c.bolsasPorPallet) c.bolsasPorPallet = Math.max(1, Math.round(c.pesoDefault / 25)) || 1;
-              if (!c.pesoBolsaDefault) c.pesoBolsaDefault = (c.pesoDefault / c.bolsasPorPallet) || 25;
-            });
-          }
-          if (state.bultos) {
-            state.bultos.forEach(b => {
-              if (!b.pesoBolsa) {
-                const m = obtenerMaterialPorNombre(b.nombreMaterial);
-                b.pesoBolsa = m ? m.pesoBolsaDefault : 25;
-              }
-            });
-          }
-          aplicarModoNoche();
           guardarTodo();
-          poblarSelectores();
-          renderizarBodega();
-          alert(`¡Respaldo restaurado! (${state.bultos.length} bultos y ${state.filasBodega.length} filas)`);
-        } catch (err) {
-          alert("Error al restaurar: archivo incompatible.");
-        }
+          cargarTodo();
+          alert("Respaldo restaurado.");
+        } catch (err) { alert("Archivo incompatible."); }
       };
       reader.readAsText(file);
     }
@@ -2810,7 +1707,6 @@
       a.click();
     }
 
-    // Registro PWA Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
     }
